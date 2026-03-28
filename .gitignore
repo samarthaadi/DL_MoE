@@ -1,0 +1,15 @@
+/.claude
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# PyTorch checkpoints
+*.pt
+*.pth
+results/checkpoints/
+
+# Test/IDE/OS
+.pytest_cache/
+.DS_Store
+Thumbs.db

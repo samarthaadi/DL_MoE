@@ -1,0 +1,10 @@
+{
+  "test": {
+    "metric": 0.0,
+    "entity_f1": 0.0
+  },
+  "config": {
+    "model_mode": "hingbert",
+    "frozen": true
+  }
+}

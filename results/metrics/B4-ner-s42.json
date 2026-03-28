@@ -1,0 +1,9 @@
+{
+  "test": {
+    "metric": 0.008756567425569177,
+    "entity_f1": 0.008756567425569177
+  },
+  "config": {
+    "model_mode": "fixed_avg"
+  }
+}

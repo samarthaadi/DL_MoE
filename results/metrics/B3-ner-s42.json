@@ -1,0 +1,10 @@
+{
+  "test": {
+    "metric": 0.002224694104560623,
+    "entity_f1": 0.002224694104560623
+  },
+  "config": {
+    "model_mode": "roberta",
+    "frozen": true
+  }
+}

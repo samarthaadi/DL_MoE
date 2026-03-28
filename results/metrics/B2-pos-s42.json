@@ -1,0 +1,10 @@
+{
+  "test": {
+    "metric": 0.6540710751237067,
+    "accuracy": 0.6540710751237067
+  },
+  "config": {
+    "model_mode": "hingbert",
+    "frozen": true
+  }
+}
