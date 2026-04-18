@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hinglish MoE Analyzer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+    header p {
+      margin-top: 8px;
+      color: #888;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 860px;
+      margin: 0 auto 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 8px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    textarea {
+      width: 100%;
+      background: #12141c;
+      border: 1px solid #2a2d3a;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1.05rem;
+      padding: 14px;
+      resize: vertical;
+      min-height: 100px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    textarea:focus { border-color: #5865f2; }
+    textarea::placeholder { color: #444; }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .field { flex: 1; min-width: 140px; }
+
+    select {
+      width: 100%;
+      background: #12141c;
+      border: 1px solid #2a2d3a;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.95rem;
+      padding: 10px 14px;
+      outline: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    select:focus { border-color: #5865f2; }
+
+    button#analyzeBtn {
+      background: #5865f2;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      white-space: nowrap;
+    }
+    button#analyzeBtn:hover { background: #4752c4; }
+    button#analyzeBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Status bar */
+    #status {
+      font-size: 0.82rem;
+      color: #666;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+    #status.error { color: #f87171; }
+    #status.ok    { color: #4ade80; }
+
+    /* Results */
+    #results { display: none; }
+
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #666;
+      margin-bottom: 14px;
+      font-weight: 600;
+    }
+
+    /* Token strip */
+    #tokenStrip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .token-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .token-chip:hover { transform: translateY(-2px); }
+
+    .token-word {
+      background: #12141c;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      transition: border-color 0.2s;
+    }
+    .token-chip:hover .token-word { border-color: #5865f2; }
+
+    .token-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      border-radius: 4px;
+      padding: 2px 7px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Alpha bar under each token */
+    .alpha-bar-wrap {
+      width: 100%;
+      height: 4px;
+      background: #2a2d3a;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .alpha-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #818cf8, #f472b6);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 3px;
+    }
+
+    /* Detail panel */
+    #detailPanel {
+      background: #12141c;
+      border: 1px solid #2a2d3a;
+      border-radius: 10px;
+      padding: 18px;
+      margin-top: 8px;
+      display: none;
+    }
+    #detailPanel h3 {
+      font-size: 1.1rem;
+      margin-bottom: 14px;
+      color: #fff;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .detail-item { }
+    .detail-item .di-label {
+      font-size: 0.72rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+    .detail-item .di-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+
+    /* Prob bars */
+    .prob-list { display: flex; flex-direction: column; gap: 6px; }
+    .prob-row { display: flex; align-items: center; gap: 8px; }
+    .prob-row .prob-label {
+      font-size: 0.8rem;
+      width: 90px;
+      color: #aaa;
+      flex-shrink: 0;
+    }
+    .prob-row .prob-bar-bg {
+      flex: 1;
+      height: 8px;
+      background: #2a2d3a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .prob-row .prob-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: #5865f2;
+      transition: width 0.4s ease;
+    }
+    .prob-row .prob-val {
+      font-size: 0.78rem;
+      color: #aaa;
+      width: 42px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Alpha legend */
+    .alpha-legend {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: #666;
+      margin-top: 6px;
+    }
+    .alpha-legend-bar {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #4ade80, #818cf8, #f472b6);
+    }
+
+    /* Info box */
+    #infoBox {
+      border-top: 1px solid #2a2d3a;
+      margin-top: 20px;
+      padding-top: 16px;
+      font-size: 0.82rem;
+      color: #666;
+      line-height: 1.6;
+    }
+    #infoBox strong { color: #aaa; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #444;
+      border-top-color: #5865f2;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Color palette for labels */
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Hinglish MoE Analyzer</h1>
+  <p>Analyze Hindi-English code-mixed text using a Frozen Mixture-of-Experts model</p>
+</header>
+
+<!-- Input card -->
+<div class="card">
+  <label for="inputText">Enter Hinglish Text</label>
+  <textarea id="inputText" placeholder="e.g. Mujhe aaj bahut zyada work karna hai aur meeting bhi hai ..."></textarea>
+
+  <div class="row">
+    <div class="field">
+      <label for="taskSelect">Task</label>
+      <select id="taskSelect">
+        <option value="lid">LID — Language Identification (Hindi / English / Other)</option>
+        <option value="pos">POS — Part-of-Speech Tagging</option>
+        <option value="ner">NER — Named Entity Recognition</option>
+      </select>
+    </div>
+    <button id="analyzeBtn" onclick="analyze()">Analyze</button>
+  </div>
+
+  <div id="status"></div>
+</div>
+
+<!-- Results card -->
+<div class="card" id="results">
+
+  <div class="section-title">Token Analysis</div>
+
+  <div id="legend" class="legend"></div>
+  <div id="tokenStrip"></div>
+
+  <div class="alpha-legend">
+    <span>RoBERTa (English)</span>
+    <div class="alpha-legend-bar"></div>
+    <span>HingBERT (Hindi)</span>
+  </div>
+  <div style="font-size:0.75rem;color:#555;margin-top:4px;">
+    Bar under each token shows router α — how much HingBERT vs RoBERTa contributed
+  </div>
+
+  <div id="detailPanel">
+    <h3 id="detailTitle"></h3>
+    <div class="detail-grid" id="detailGrid"></div>
+    <div class="section-title" style="margin-top:8px;">Label Probabilities</div>
+    <div class="prob-list" id="probList"></div>
+  </div>
+
+  <div id="infoBox"></div>
+</div>
+
+<script>
+  // ── Label colour map ────────────────────────────────────────────────────────
+  const LABEL_COLORS = {
+    // LID
+    hi:  { bg: "#ff6b35", text: "#fff", name: "Hindi" },
+    en:  { bg: "#5865f2", text: "#fff", name: "English" },
+    ot:  { bg: "#6b7280", text: "#fff", name: "Other" },
+    // POS
+    NOUN:     { bg: "#0ea5e9", text: "#fff", name: "Noun" },
+    PROPN:    { bg: "#06b6d4", text: "#fff", name: "Proper Noun" },
+    VERB:     { bg: "#8b5cf6", text: "#fff", name: "Verb" },
+    ADJ:      { bg: "#f59e0b", text: "#000", name: "Adjective" },
+    ADV:      { bg: "#f97316", text: "#fff", name: "Adverb" },
+    ADP:      { bg: "#64748b", text: "#fff", name: "Adposition" },
+    PRON:     { bg: "#ec4899", text: "#fff", name: "Pronoun" },
+    DET:      { bg: "#14b8a6", text: "#fff", name: "Determiner" },
+    CONJ:     { bg: "#a78bfa", text: "#fff", name: "Conjunction" },
+    PART:     { bg: "#94a3b8", text: "#fff", name: "Particle" },
+    PRON_WH:  { bg: "#f43f5e", text: "#fff", name: "Wh-Pronoun" },
+    PART_NEG: { bg: "#ef4444", text: "#fff", name: "Negative Particle" },
+    NUM:      { bg: "#22c55e", text: "#fff", name: "Number" },
+    X:        { bg: "#374151", text: "#aaa", name: "Unknown" },
+    // NER
+    "O":              { bg: "#374151", text: "#aaa", name: "No Entity" },
+    "B-PERSON":       { bg: "#f59e0b", text: "#000", name: "Person (start)" },
+    "I-PERSON":       { bg: "#fbbf24", text: "#000", name: "Person (cont.)" },
+    "B-ORGANIZATION": { bg: "#3b82f6", text: "#fff", name: "Organization (start)" },
+    "I-ORGANIZATION": { bg: "#60a5fa", text: "#fff", name: "Organization (cont.)" },
+    "B-LOCATION":     { bg: "#10b981", text: "#fff", name: "Location (start)" },
+    "I-LOCATION":     { bg: "#34d399", text: "#fff", name: "Location (cont.)" },
+  };
+
+  const DEFAULT_COLOR = { bg: "#374151", text: "#aaa", name: "" };
+
+  function labelColor(lbl) {
+    return LABEL_COLORS[lbl] || DEFAULT_COLOR;
+  }
+
+  // ── Main analyze function ───────────────────────────────────────────────────
+  async function analyze() {
+    const text = document.getElementById("inputText").value.trim();
+    const task = document.getElementById("taskSelect").value;
+    const btn  = document.getElementById("analyzeBtn");
+    const status = document.getElementById("status");
+
+    if (!text) {
+      setStatus("Please enter some text first.", "error");
+      return;
+    }
+
+    btn.disabled = true;
+    setStatus('<span class="spinner"></span>Analyzing…');
+    document.getElementById("results").style.display = "none";
+    document.getElementById("detailPanel").style.display = "none";
+
+    try {
+      const res = await fetch("/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, task }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        setStatus(data.error || "Server error.", "error");
+        return;
+      }
+
+      renderResults(data, task);
+      setStatus(
+        `✓ ${data.num_words} tokens analyzed · device: ${data.device} · checkpoint: ${data.checkpoint || "none (random router)"}`,
+        "ok"
+      );
+    } catch (e) {
+      setStatus("Cannot reach the API server. Is api.py running?", "error");
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ── Render results ──────────────────────────────────────────────────────────
+  function renderResults(data, task) {
+    const tokens = data.tokens;
+    const strip  = document.getElementById("tokenStrip");
+    const legend = document.getElementById("legend");
+    strip.innerHTML = "";
+    legend.innerHTML = "";
+
+    // Build legend from unique labels
+    const seenLabels = new Set();
+    tokens.forEach(t => seenLabels.add(t.prediction));
+    seenLabels.forEach(lbl => {
+      const c = labelColor(lbl);
+      const el = document.createElement("div");
+      el.className = "legend-item";
+      el.innerHTML = `<div class="legend-dot" style="background:${c.bg}"></div>
+                      <span>${lbl} — ${c.name || lbl}</span>`;
+      legend.appendChild(el);
+    });
+
+    // Build token chips
+    tokens.forEach((t, idx) => {
+      const c     = labelColor(t.prediction);
+      const alpha = t.alpha !== null ? t.alpha : 0.5;
+
+      const chip = document.createElement("div");
+      chip.className = "token-chip";
+      chip.title = `Click for details`;
+      chip.innerHTML = `
+        <div class="token-word" style="border-color:${c.bg}33">${escHtml(t.word)}</div>
+        <div class="token-label" style="background:${c.bg};color:${c.text}">${t.prediction}</div>
+        <div class="alpha-bar-wrap" style="width:100%">
+          <div class="alpha-bar-fill" style="width:${(alpha*100).toFixed(1)}%"></div>
+        </div>
+      `;
+      chip.addEventListener("click", () => showDetail(t, idx));
+      strip.appendChild(chip);
+    });
+
+    document.getElementById("results").style.display = "block";
+    renderInfoBox(data, task);
+  }
+
+  // ── Detail panel ────────────────────────────────────────────────────────────
+  function showDetail(t, idx) {
+    const panel = document.getElementById("detailPanel");
+    const c     = labelColor(t.prediction);
+    const alpha = t.alpha;
+
+    document.getElementById("detailTitle").innerHTML =
+      `"${escHtml(t.word)}" &nbsp;<span class="token-label" style="background:${c.bg};color:${c.text};font-size:0.8rem">${t.prediction} — ${c.name || t.prediction}</span>`;
+
+    const grid = document.getElementById("detailGrid");
+    grid.innerHTML = "";
+
+    const items = [
+      ["Confidence",       (t.confidence * 100).toFixed(1) + "%"],
+      ["Router α (HingBERT weight)", alpha !== null ? alpha.toFixed(4) : "N/A"],
+      ["RoBERTa weight",   alpha !== null ? (1 - alpha).toFixed(4) : "N/A"],
+      ["Expert disagreement (L2)", t.l2_disagreement !== null ? t.l2_disagreement.toFixed(3) : "N/A"],
+    ];
+    items.forEach(([label, value]) => {
+      const div = document.createElement("div");
+      div.className = "detail-item";
+      div.innerHTML = `<div class="di-label">${label}</div><div class="di-value">${value}</div>`;
+      grid.appendChild(div);
+    });
+
+    // Probability bars
+    const probList = document.getElementById("probList");
+    probList.innerHTML = "";
+    const probs = Object.entries(t.all_probs).sort((a, b) => b[1] - a[1]);
+    probs.forEach(([lbl, prob]) => {
+      const bc = labelColor(lbl);
+      const row = document.createElement("div");
+      row.className = "prob-row";
+      row.innerHTML = `
+        <span class="prob-label">${lbl} <span style="font-size:0.68rem;color:#555">— ${bc.name || lbl}</span></span>
+        <div class="prob-bar-bg">
+          <div class="prob-bar-fill" style="width:${(prob*100).toFixed(1)}%;background:${bc.bg}"></div>
+        </div>
+        <span class="prob-val">${(prob*100).toFixed(1)}%</span>
+      `;
+      probList.appendChild(row);
+    });
+
+    panel.style.display = "block";
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // ── Info box ────────────────────────────────────────────────────────────────
+  const TASK_EXPLAIN = {
+    lid: `<strong>Language Identification (LID):</strong> Each word is tagged as
+          <strong style="color:#ff6b35">hi</strong> (Hindi),
+          <strong style="color:#5865f2">en</strong> (English), or
+          <strong style="color:#6b7280">ot</strong> (Other/punctuation).`,
+    pos: `<strong>Part-of-Speech (POS):</strong> Each word is tagged with its grammatical role —
+          NOUN, VERB, ADJ, etc.`,
+    ner: `<strong>Named Entity Recognition (NER):</strong> Named entities (people, organizations,
+          locations) are tagged in BIO format. <strong>B-</strong> = beginning of entity,
+          <strong>I-</strong> = inside entity, <strong>O</strong> = not an entity.`,
+  };
+
+  function renderInfoBox(data, task) {
+    document.getElementById("infoBox").innerHTML = `
+      ${TASK_EXPLAIN[task] || ""}
+      <br/><br/>
+      <strong>Router α:</strong> The bar under each token shows how much HingBERT (Hindi specialist)
+      vs RoBERTa (English generalist) contributed. A full bar = 100% HingBERT; empty = 100% RoBERTa.
+      Click any token for full details.
+    `;
+  }
+
+  // ── Utilities ───────────────────────────────────────────────────────────────
+  function setStatus(msg, cls) {
+    const el = document.getElementById("status");
+    el.innerHTML = msg;
+    el.className = cls || "";
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  // Allow Ctrl+Enter to submit
+  document.getElementById("inputText").addEventListener("keydown", e => {
+    if (e.key === "Enter" && e.ctrlKey) analyze();
+  });
+</script>
+</body>
+</html>

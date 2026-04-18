@@ -1,7 +1,7 @@
 {
   "test": {
-    "metric": 0.6540710751237067,
-    "accuracy": 0.6540710751237067
+    "metric": 0.6548208127155496,
+    "accuracy": 0.6548208127155496
   },
   "config": {
     "model_mode": "hingbert",

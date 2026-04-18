@@ -1,0 +1,9 @@
+{
+  "test": {
+    "metric": 0.8009398183951842,
+    "weighted_f1": 0.8009398183951842
+  },
+  "config": {
+    "model_mode": "fixed_avg"
+  }
+}

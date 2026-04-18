@@ -6,3 +6,5 @@ seqeval>=1.2.2
 matplotlib>=3.7.0
 seaborn>=0.12.0
 pytest>=7.4.0
+flask>=3.0.0
+flask-cors>=4.0.0

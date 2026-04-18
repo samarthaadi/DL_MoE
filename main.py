@@ -129,6 +129,9 @@ def run_train(args):
     path  = ckpt_path(exp_id, args.task, args.seed)
     mpath = metrics_path(exp_id, args.task, args.seed)
     trainer.save_checkpoint(path, metrics=test_result, exp_config=exp_config)
+    if args.save_full:
+        full_path = path.replace(".pt", "_full.pt")
+        trainer.save_full_checkpoint(full_path, metrics=test_result, exp_config=exp_config)
     os.makedirs(os.path.dirname(mpath), exist_ok=True)
     with open(mpath, "w") as f:
         json.dump({"val": best_val, "test": test_result, "config": exp_config}, f, indent=2)
@@ -230,6 +233,11 @@ def run_sweep(args):
                 os.makedirs(os.path.dirname(cp), exist_ok=True)
                 os.makedirs(os.path.dirname(mp), exist_ok=True)
                 trainer.save_checkpoint(cp, metrics=test_result, exp_config=exp_config)
+                if args.save_full:
+                    trainer.save_full_checkpoint(
+                        cp.replace(".pt", "_full.pt"),
+                        metrics=test_result, exp_config=exp_config,
+                    )
                 with open(mp, "w") as f:
                     json.dump({"test": test_result, "config": exp_config}, f, indent=2)
 
@@ -287,6 +295,8 @@ def parse_args():
     p.add_argument("--batch_size", type=int, default=configs.BATCH_SIZE)
     p.add_argument("--max_epochs", type=int, default=None,
                    help="Override MAX_EPOCHS (e.g. 3 for a quick sanity check)")
+    p.add_argument("--save_full", action="store_true",
+                   help="Also save a full checkpoint with all weights (~1 GB, self-contained)")
 
     return p.parse_args()
 

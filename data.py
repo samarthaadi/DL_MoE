@@ -198,6 +198,13 @@ def load_pos_data():
     if words:
         samples.append((words, labels))
 
+    # Remap any label not in the known POS set to 'X' (catch-all tag)
+    known_pos = set(configs.TASK_LABELS["pos"])
+    samples = [
+        (w, [l if l in known_pos else "X" for l in ls])
+        for w, ls in samples
+    ]
+
     rng = random.Random(0)
     rng.shuffle(samples)
     n_test = max(1, int(len(samples) * 0.2))
@@ -243,7 +250,7 @@ def _tokenize_sample(words, labels, label2id, hing_tok, rob_tok, max_len):
     rob_max  = max((w for w in rob_wids  if w is not None), default=-1) + 1
     num_words = min(hing_max, rob_max, len(words))
 
-    label_ids = [label2id[l] for l in labels[:num_words]]
+    label_ids = [label2id.get(l, 0) for l in labels[:num_words]]
 
     return {
         "hing_input_ids":      hing_enc.input_ids.squeeze(0),       # (max_len,)

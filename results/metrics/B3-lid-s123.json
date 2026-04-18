@@ -1,7 +1,7 @@
 {
   "test": {
-    "metric": 0.6287299445194182,
-    "accuracy": 0.6287299445194182
+    "metric": 0.8148754205591238,
+    "weighted_f1": 0.8148754205591238
   },
   "config": {
     "model_mode": "roberta",
