@@ -3,8 +3,8 @@ CLI entry point for training, evaluation, interpretability analysis, and sweeps.
 
 Usage examples:
   python main.py --task lid --mode train --tau 1.0 --seed 42
-  python main.py --task lid --mode eval  --checkpoint results/checkpoints/R1-lid-s42.pt
-  python main.py --task lid --mode analysis --checkpoint results/checkpoints/R1-lid-s42.pt
+  python main.py --task lid --mode eval  --checkpoint ../05_results/checkpoints/R1-lid-s42.pt
+  python main.py --task lid --mode analysis --checkpoint ../05_results/checkpoints/R1-lid-s42.pt
   python main.py --task lid --mode train --model_mode hingbert --seed 42
   python main.py --mode sweep
 """
@@ -23,6 +23,7 @@ from data import load_comi_lingua, load_ner_data, load_pos_data, make_dataloader
 from models import build_model
 from training import Trainer, evaluate
 
+_RESULTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "05_results")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -41,15 +42,15 @@ def get_device() -> str:
 
 
 def ckpt_path(exp_id: str, task: str, seed: int) -> str:
-    return f"results/checkpoints/{exp_id}-{task}-s{seed}.pt"
+    return os.path.join(_RESULTS, "checkpoints", f"{exp_id}-{task}-s{seed}.pt")
 
 
 def metrics_path(exp_id: str, task: str, seed: int) -> str:
-    return f"results/metrics/{exp_id}-{task}-s{seed}.json"
+    return os.path.join(_RESULTS, "metrics", f"{exp_id}-{task}-s{seed}.json")
 
 
 def log_path(exp_id: str, task: str, seed: int) -> str:
-    return f"results/logs/{exp_id}-{task}-s{seed}.csv"
+    return os.path.join(_RESULTS, "logs", f"{exp_id}-{task}-s{seed}.csv")
 
 
 def _exp_config_from_args(args) -> dict:
@@ -166,7 +167,7 @@ def run_eval(args):
 def run_analysis(args):
     """Run all five analyses for one checkpoint.
 
-    After individual analyses are done, checks results/figures/ for records
+    After individual analyses are done, checks 05_results/figures/ for records
     from other tasks and runs cross-task analysis (Analysis 5) if both
     LID and POS records are present.
     """
@@ -190,7 +191,7 @@ def run_analysis(args):
     model.eval()
 
     import json as _json
-    figures_dir = "results/figures"
+    figures_dir = os.path.join(_RESULTS, "figures")
     stats = run_analyses(model, test_dl, task, device,
                          figures_dir=figures_dir, exp_id=exp_id)
 
@@ -273,7 +274,7 @@ def run_sweep(args):
                 print(f"  {key}: {mean:.4f} ± {std:.4f}")
 
     # Save aggregated results
-    agg_path = "results/metrics/aggregated.json"
+    agg_path = os.path.join(_RESULTS, "metrics", "aggregated.json")
     os.makedirs(os.path.dirname(agg_path), exist_ok=True)
     with open(agg_path, "w") as f:
         json.dump(all_results, f, indent=2)

@@ -1,8 +1,9 @@
 # 03_code — Source Code
 
-The full source code lives in the **repository root** (one level up from this folder). This directory provides the required submission structure; all runnable scripts and configs point back to the root.
+All source code lives directly in this folder.
+Results (checkpoints, metrics, figures, logs) are written to `../05_results/`.
 
-## Source files (repo root)
+## Files
 
 | File | Role |
 |------|------|
@@ -15,32 +16,35 @@ The full source code lives in the **repository root** (one level up from this fo
 | `main.py` | CLI entry point |
 | `api.py` | Flask REST API server |
 | `setup_data.py` | Offline asset downloader |
-
-See `scripts/` for ready-to-run shell wrappers and the root `README.md` for full documentation.
+| `tests/` | Unit tests for word-alignment logic |
+| `website/` | Frontend HTML (served by api.py) |
+| `scripts/` | Shell wrappers: train / eval / sweep / demo |
 
 ## Environment setup
 
 ```bash
+# From repo root
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r 03_code/requirements.txt
 ```
 
-Hardware used: NVIDIA GPU (CUDA) recommended; CPU fallback is automatic.
-Python: 3.10+
+Hardware: NVIDIA GPU (CUDA) recommended; CPU fallback is automatic. Python 3.10+.
 
-## Quick commands
+## Quick commands (run from repo root)
 
 ```bash
 # Train
-bash 03_code/scripts/train.sh
+python 03_code/main.py --task lid --mode train --exp_id R1 --seed 42
 
 # Evaluate
-bash 03_code/scripts/eval.sh
+python 03_code/main.py --mode eval --checkpoint 05_results/checkpoints/R1-lid-s42.pt
 
 # Full sweep
-bash 03_code/scripts/sweep.sh
+python 03_code/main.py --mode sweep
 
 # API server + web demo
-bash 03_code/scripts/demo.sh
+python 03_code/api.py
 ```
+
+See the root `README.md` for full documentation.

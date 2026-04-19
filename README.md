@@ -199,57 +199,45 @@ Mean ± std across seeds (seeds 42, 123). Metric: weighted F1 for LID, accuracy 
 
 ```
 DL_MoE/
-├── configs.py              # All hyperparameters, task labels, experiment registry
-├── data.py                 # Dataset loaders, tokenization, alignment, DataLoaders
-├── models.py               # FrozenExpert, MoEModel, baselines, build_model()
-├── routers.py              # RouterMLP, RouterGRU (BiGRU), RouterCNN implementations
-├── training.py             # Trainer class + evaluate()
-├── analysis.py             # Router interpretability analyses + JSON persistence
-├── main.py                 # CLI entry point (train / eval / analysis / sweep)
-├── api.py                  # Flask REST API + ensemble inference server
-├── setup_data.py           # Downloads all models and datasets for offline use
-├── requirements.txt        # Python dependencies
-│
-├── tests/
-│   └── test_alignment.py   # 10 unit tests for word-alignment logic
-│
-├── website/
-│   ├── index.html          # Interactive token-level analyzer (calls /analyze)
-│   ├── results.html        # Results dashboard — all 17 experiments
-│   ├── analysis.html       # Interpretability dashboard (figures + stats)
-│   └── README.md           # How to run api.py and verify the model
-│
-├── results/                # Generated outputs (gitignored: B1 checkpoints, *_records.json)
-│   ├── checkpoints/        # Model weights  (<exp_id>-<task>-s<seed>.pt)
-│   ├── metrics/            # JSON metric files + aggregated.json
-│   ├── logs/               # Per-epoch CSV training logs
-│   └── figures/            # Interpretability PNGs + *_stats.json
-│
 ├── 01_admin/               # CS F425 submission — team info
 │   └── team_info.txt
 │
 ├── 02_report/              # CS F425 submission — research paper
 │   ├── final_report.tex    # IEEE two-column LaTeX source
-│   ├── references.bib      # BibTeX (12 verified citations)
-│   └── DL_project.pdf      # Compiled IEEE paper
+│   └── references.bib      # BibTeX citations
 │
-├── 03_code/                # CS F425 submission — code package
-│   ├── README.md
-│   ├── requirements.txt
-│   ├── configs/configs.py
-│   ├── scripts/            # Shell wrappers: train / eval / sweep / demo
-│   └── src/README.md       # Points to root Python source files
+├── 03_code/                # CS F425 submission — all source code
+│   ├── configs.py          # All hyperparameters, task labels, experiment registry
+│   ├── data.py             # Dataset loaders, tokenization, alignment, DataLoaders
+│   ├── models.py           # FrozenExpert, MoEModel, baselines, build_model()
+│   ├── routers.py          # RouterMLP, RouterGRU (BiGRU), RouterCNN implementations
+│   ├── training.py         # Trainer class + evaluate()
+│   ├── analysis.py         # Router interpretability analyses + JSON persistence
+│   ├── main.py             # CLI entry point (train / eval / analysis / sweep)
+│   ├── api.py              # Flask REST API + ensemble inference server
+│   ├── setup_data.py       # Downloads all models and datasets for offline use
+│   ├── requirements.txt    # Python dependencies
+│   ├── README.md           # Setup and usage guide
+│   ├── tests/
+│   │   └── test_alignment.py   # 10 unit tests for word-alignment logic
+│   ├── website/
+│   │   ├── index.html      # Interactive token-level analyzer
+│   │   ├── results.html    # Results dashboard — all 17 experiments
+│   │   └── analysis.html   # Interpretability dashboard
+│   └── scripts/            # Shell wrappers: train / eval / sweep / demo
 │
 ├── 04_data/                # CS F425 submission — dataset documentation
 │   ├── data_description.md
 │   ├── dataset_links.txt
 │   └── sample_inputs/      # Example LID and POS sentences (JSON)
 │
-├── 05_results/             # CS F425 submission — quantitative results
-│   ├── main_results.csv    # All 15 experiments × LID + POS, mean ± std
-│   ├── ablations.csv       # 4 ablation groups with deltas
-│   ├── figures/            # → see results/figures/
-│   └── logs/               # → see results/logs/
+├── 05_results/             # All experiment outputs
+│   ├── checkpoints/        # Model weights  (<exp_id>-<task>-s<seed>.pt)
+│   ├── metrics/            # JSON metric files + aggregated.json
+│   ├── logs/               # Per-epoch CSV training logs
+│   ├── figures/            # Interpretability PNGs + *_stats.json
+│   ├── main_results.csv    # All experiments × LID + POS, mean ± std
+│   └── ablations.csv       # Ablation groups with deltas
 │
 └── 07_claims/              # CS F425 submission — contribution statement
     ├── prior_work_basis.md
@@ -260,15 +248,15 @@ DL_MoE/
 
 | File | Responsibility |
 |------|---------------|
-| `configs.py` | Single source of truth for all constants and experiment definitions |
-| `data.py` | Downloads / loads datasets, dual-tokenizes with HingBERT + RoBERTa, pads/collates batches |
-| `models.py` | Defines `FrozenExpert`, `MoEModel`, single-expert and fixed-avg baselines; `build_model()` factory |
-| `routers.py` | `RouterMLP`, `RouterGRU` (BiGRU), `RouterCNN` — all with temperature σ and optional hard routing |
-| `training.py` | `Trainer`: AdamW + linear warmup, gradient clipping, early stopping, best-weight restore, CSV logging |
-| `analysis.py` | Extracts per-word α values; computes stats; saves `*_records.json` + `*_stats.json`; generates 4 PNG figures |
-| `main.py` | Argument parsing, orchestrates train / eval / analysis / sweep workflows |
-| `api.py` | Flask server: ensemble inference, metric-weighted checkpoint selection, figure serving, stats endpoints |
-| `setup_data.py` | Pre-downloads HingBERT, RoBERTa, and all datasets into `models_and_data/` for offline use |
+| `03_code/configs.py` | Single source of truth for all constants and experiment definitions |
+| `03_code/data.py` | Downloads / loads datasets, dual-tokenizes with HingBERT + RoBERTa, pads/collates batches |
+| `03_code/models.py` | Defines `FrozenExpert`, `MoEModel`, single-expert and fixed-avg baselines; `build_model()` factory |
+| `03_code/routers.py` | `RouterMLP`, `RouterGRU` (BiGRU), `RouterCNN` — all with temperature σ and optional hard routing |
+| `03_code/training.py` | `Trainer`: AdamW + linear warmup, gradient clipping, early stopping, best-weight restore, CSV logging |
+| `03_code/analysis.py` | Extracts per-word α values; computes stats; saves `*_records.json` + `*_stats.json`; generates 4 PNG figures |
+| `03_code/main.py` | Argument parsing, orchestrates train / eval / analysis / sweep workflows |
+| `03_code/api.py` | Flask server: ensemble inference, metric-weighted checkpoint selection, figure serving, stats endpoints |
+| `03_code/setup_data.py` | Pre-downloads HingBERT, RoBERTa, and all datasets into `models_and_data/` for offline use |
 
 ---
 
@@ -285,10 +273,10 @@ source .venv/bin/activate       # Linux / macOS
 # .venv\Scripts\activate        # Windows
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -r 03_code/requirements.txt
 ```
 
-> **Note:** The first run will download HingBERT (~440 MB) and RoBERTa-base (~500 MB) from HuggingFace Hub. To pre-download everything for offline use, run `python setup_data.py` after installing dependencies.
+> **Note:** The first run will download HingBERT (~440 MB) and RoBERTa-base (~500 MB) from HuggingFace Hub. To pre-download everything for offline use, run `python 03_code/setup_data.py` after installing dependencies.
 
 **CUDA:** PyTorch will automatically use a GPU if available (`torch.cuda.is_available()`). No special configuration required.
 
@@ -296,53 +284,55 @@ pip install -r requirements.txt
 
 ## Usage
 
+All commands below are run from the **repo root** (`DL_MoE/`).
+
 ### 1. Training a single experiment
 
 ```bash
 # Train the main MoE model (R1) on Language ID task, seed 42
-python main.py --task lid --mode train --exp_id R1 --seed 42
+python 03_code/main.py --task lid --mode train --exp_id R1 --seed 42
 
 # Train with explicit MoE flags (equivalent to R1 above)
-python main.py --task lid --mode train --model_mode moe --tau 1.0 --seed 42
+python 03_code/main.py --task lid --mode train --model_mode moe --tau 1.0 --seed 42
 
 # Train with BiGRU router (R8)
-python main.py --task lid --mode train --exp_id R8 --seed 42
+python 03_code/main.py --task lid --mode train --exp_id R8 --seed 42
 
 # Train with CNN router (R9)
-python main.py --task lid --mode train --exp_id R9 --seed 42
+python 03_code/main.py --task lid --mode train --exp_id R9 --seed 42
 
 # Train a baseline: frozen HingBERT
-python main.py --task pos --mode train --exp_id B2 --seed 42
+python 03_code/main.py --task pos --mode train --exp_id B2 --seed 42
 
 # Quick sanity check (3 epochs only)
-python main.py --task lid --mode train --exp_id R1 --seed 42 --max_epochs 3
+python 03_code/main.py --task lid --mode train --exp_id R1 --seed 42 --max_epochs 3
 ```
 
 ### 2. Evaluating a saved checkpoint
 
 ```bash
-python main.py --mode eval --checkpoint results/checkpoints/R1-lid-s42.pt
+python 03_code/main.py --mode eval --checkpoint 05_results/checkpoints/R1-lid-s42.pt
 ```
 
 ### 3. Interpretability analysis
 
 ```bash
-python main.py --mode analysis --checkpoint results/checkpoints/R1-lid-s42.pt --exp_id R1
+python 03_code/main.py --mode analysis --checkpoint 05_results/checkpoints/R1-lid-s42.pt --exp_id R1
 ```
 
-Figures and stats JSON are saved to `results/figures/`. If a sibling-task records file already exists (e.g., running LID analysis when POS records are present), cross-task analysis runs automatically.
+Figures and stats JSON are saved to `05_results/figures/`. Cross-task analysis runs automatically when records for both tasks are present.
 
 ### 4. Full experiment sweep
 
 ```bash
 # Run all experiments × all tasks × all seeds
-python main.py --mode sweep
+python 03_code/main.py --mode sweep
 
 # Run a subset of experiments
-python main.py --mode sweep --exp_ids R1 R8 R9 B2 B3
+python 03_code/main.py --mode sweep --exp_ids R1 R8 R9 B2 B3
 ```
 
-Results are aggregated in `results/metrics/aggregated.json`.
+Results are aggregated in `05_results/metrics/aggregated.json`.
 
 ### CLI Arguments Reference
 
@@ -371,8 +361,13 @@ Results are aggregated in `results/metrics/aggregated.json`.
 ### Starting the server
 
 ```bash
-python api.py
+# Activate venv and start
+source .venv/bin/activate
+python 03_code/api.py
 # Server starts at http://localhost:5000
+
+# Stop the server
+kill $(lsof -ti:5000)
 ```
 
 ### API Endpoints
@@ -382,7 +377,7 @@ python api.py
 | `/analyze` | POST | Run ensemble inference on a sentence |
 | `/checkpoints` | GET | List all available checkpoints with metadata |
 | `/metrics` | GET | Return aggregated metrics JSON |
-| `/figures/<filename>` | GET | Serve a PNG from `results/figures/` |
+| `/figures/<filename>` | GET | Serve a PNG from `05_results/figures/` |
 | `/analysis` | GET | List all `*_stats.json` files with metadata |
 | `/analysis/stats` | GET | Return stats JSON for `?exp=R1&task=lid` |
 
@@ -418,7 +413,7 @@ Open the HTML files directly in a browser while the Flask API is running on `loc
 
 ## Configuration Reference
 
-All global settings live in `configs.py`:
+All global settings live in `03_code/configs.py`:
 
 ```python
 # Pre-trained models
@@ -446,7 +441,7 @@ TASKS = ["lid", "pos"]    # add "ner" to enable NER
 After training and analysis, results are organized as follows:
 
 ```
-results/
+05_results/
 ├── checkpoints/
 │   └── R1-lid-s42.pt              # Trainable weights + metadata (router + task head only, ~1 MB)
 ├── metrics/
@@ -454,14 +449,16 @@ results/
 │   └── aggregated.json            # mean ± std across seeds for each exp/task
 ├── logs/
 │   └── R1-lid-s42.csv             # epoch, train_loss, val_metric
-└── figures/
-    ├── R1_lid_alpha_by_lang.png   # Analysis figure 1
-    ├── R1_lid_switch_points.png   # Analysis figure 2
-    ├── R1_lid_cmi_buckets.png     # Analysis figure 3
-    ├── R1_lid_disagreement.png    # Analysis figure 4
-    ├── R1_lid_records.json        # Raw per-word records (gitignored — large)
-    ├── R1_lid_stats.json          # Computed summary stats (served by /analysis/stats)
-    └── cross_task_alpha.png       # Cross-task violin (generated when both LID + POS present)
+├── figures/
+│   ├── R1_lid_alpha_by_lang.png   # Analysis figure 1
+│   ├── R1_lid_switch_points.png   # Analysis figure 2
+│   ├── R1_lid_cmi_buckets.png     # Analysis figure 3
+│   ├── R1_lid_disagreement.png    # Analysis figure 4
+│   ├── R1_lid_records.json        # Raw per-word records (gitignored — large)
+│   ├── R1_lid_stats.json          # Computed summary stats (served by /analysis/stats)
+│   └── cross_task_alpha.png       # Cross-task violin (generated when both LID + POS present)
+├── main_results.csv               # All experiments × LID + POS, mean ± std
+└── ablations.csv                  # Ablation groups with deltas
 ```
 
 Checkpoint files store **only the trainable parameters** (router + task head), keeping file sizes small (~1 MB). Expert weights are always re-loaded from HuggingFace on demand.
@@ -490,10 +487,10 @@ A fifth analysis (`run_cross_task_analyses`) compares α distributions across LI
 Unit tests verify the correctness of the word-alignment logic before running any experiments:
 
 ```bash
-python -m pytest tests/ -v
+python -m pytest 03_code/tests/ -v
 ```
 
-The test suite (10 tests in `tests/test_alignment.py`) covers:
+The test suite (10 tests in `03_code/tests/test_alignment.py`) covers:
 
 | # | Test |
 |---|------|

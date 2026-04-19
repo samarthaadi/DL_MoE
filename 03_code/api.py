@@ -35,7 +35,11 @@ import torch
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+_HERE    = os.path.dirname(os.path.abspath(__file__))
+_RESULTS = os.path.join(_HERE, "..", "05_results")
+_WEBSITE = os.path.join(_HERE, "website")
+
+sys.path.insert(0, _HERE)
 
 import configs
 from models import build_model, align_subtokens_to_words
@@ -45,7 +49,7 @@ from training import Trainer
 # App setup
 # ---------------------------------------------------------------------------
 
-app = Flask(__name__, static_folder="website", static_url_path="")
+app = Flask(__name__, static_folder=_WEBSITE, static_url_path="")
 CORS(app)
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -143,8 +147,8 @@ def _score_checkpoints(task: str) -> list[tuple[str, float, float, dict]]:
     Reads results/metrics/*-<task>-*.json, pairs each with its .pt file.
     Falls back to listing .pt files with metric=0.5 if no metrics found.
     """
-    ckpt_dir    = os.path.join(os.path.dirname(__file__), "results", "checkpoints")
-    metrics_dir = os.path.join(os.path.dirname(__file__), "results", "metrics")
+    ckpt_dir    = os.path.join(_RESULTS, "checkpoints")
+    metrics_dir = os.path.join(_RESULTS, "metrics")
 
     if not os.path.isdir(ckpt_dir):
         return []
@@ -357,12 +361,12 @@ def _run_ensemble(
 
 @app.route("/")
 def index():
-    return send_from_directory("website", "index.html")
+    return send_from_directory(_WEBSITE, "index.html")
 
 
 @app.route("/checkpoints")
 def list_checkpoints():
-    ckpt_dir = os.path.join(os.path.dirname(__file__), "results", "checkpoints")
+    ckpt_dir = os.path.join(_RESULTS, "checkpoints")
     files = glob.glob(os.path.join(ckpt_dir, "*.pt")) if os.path.isdir(ckpt_dir) else []
     return jsonify({"checkpoints": [os.path.basename(f) for f in sorted(files)]})
 
@@ -377,7 +381,7 @@ def get_metrics():
             return jsonify(json.load(f))
 
     data = {}
-    metrics_dir = os.path.join(os.path.dirname(__file__), "results", "metrics")
+    metrics_dir = os.path.join(_RESULTS, "metrics")
     for mf in glob.glob(os.path.join(metrics_dir, "*.json")):
         name = os.path.splitext(os.path.basename(mf))[0]
         with open(mf) as f:
@@ -389,14 +393,14 @@ def get_metrics():
 def serve_figure(filename):
     """Serve a PNG figure from results/figures/."""
     from flask import send_from_directory
-    figures_dir = os.path.join(os.path.dirname(__file__), "results", "figures")
+    figures_dir = os.path.join(_RESULTS, "figures")
     return send_from_directory(figures_dir, filename)
 
 
 @app.route("/analysis")
 def list_analyses():
     """List all available analysis results (exp_id + task combos with stats JSON)."""
-    figures_dir = os.path.join(os.path.dirname(__file__), "results", "figures")
+    figures_dir = os.path.join(_RESULTS, "figures")
     analyses = []
     if os.path.isdir(figures_dir):
         for sf in sorted(glob.glob(os.path.join(figures_dir, "*_stats.json"))):
@@ -432,7 +436,7 @@ def get_analysis_stats():
     """
     exp_id = request.args.get("exp", "")
     task   = request.args.get("task", "")
-    figures_dir = os.path.join(os.path.dirname(__file__), "results", "figures")
+    figures_dir = os.path.join(_RESULTS, "figures")
     stats_path  = os.path.join(figures_dir, f"{exp_id}_{task}_stats.json")
     if not os.path.exists(stats_path):
         return jsonify({"error": f"No stats found for exp={exp_id} task={task}"}), 404
@@ -496,7 +500,7 @@ def analyze():
     # --- Resolve checkpoint list ----------------------------------------
     if custom_ckpt:
         cp = custom_ckpt if os.path.isabs(custom_ckpt) else \
-             os.path.join(os.path.dirname(__file__), "results", "checkpoints", custom_ckpt)
+             os.path.join(_RESULTS, "checkpoints", custom_ckpt)
         # Single custom checkpoint: raw=1.0, norm=1.0, no config known yet
         scored = [(cp, 1.0, 1.0, {})]
         use_ensemble = False
@@ -559,6 +563,6 @@ def analyze():
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    os.makedirs(os.path.join(os.path.dirname(__file__), "website"), exist_ok=True)
+    os.makedirs(_WEBSITE, exist_ok=True)
     print(f"[API] Starting server on http://localhost:5000  (device={DEVICE})")
     app.run(host="0.0.0.0", port=5000, debug=False)
