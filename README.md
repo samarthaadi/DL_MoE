@@ -199,28 +199,61 @@ Mean ± std across seeds (seeds 42, 123). Metric: weighted F1 for LID, accuracy 
 
 ```
 DL_MoE/
-├── configs.py          # All hyperparameters, task labels, experiment registry
-├── data.py             # Dataset loaders, tokenization, alignment, DataLoaders
-├── models.py           # FrozenExpert, MoEModel, baselines, build_model()
-├── routers.py          # RouterMLP, RouterGRU (BiGRU), RouterCNN implementations
-├── training.py         # Trainer class (training loop, early stopping, checkpointing)
-│                       # + evaluate() function
-├── analysis.py         # Router interpretability analyses + JSON persistence + figures
-├── main.py             # CLI entry point (train / eval / analysis / sweep modes)
-├── api.py              # Flask REST API + ensemble inference server
-├── setup_data.py       # Downloads all models and datasets for offline use
-├── requirements.txt    # Python dependencies
+├── configs.py              # All hyperparameters, task labels, experiment registry
+├── data.py                 # Dataset loaders, tokenization, alignment, DataLoaders
+├── models.py               # FrozenExpert, MoEModel, baselines, build_model()
+├── routers.py              # RouterMLP, RouterGRU (BiGRU), RouterCNN implementations
+├── training.py             # Trainer class + evaluate()
+├── analysis.py             # Router interpretability analyses + JSON persistence
+├── main.py                 # CLI entry point (train / eval / analysis / sweep)
+├── api.py                  # Flask REST API + ensemble inference server
+├── setup_data.py           # Downloads all models and datasets for offline use
+├── requirements.txt        # Python dependencies
+│
 ├── tests/
-│   └── test_alignment.py    # 10 unit tests for word-alignment logic
+│   └── test_alignment.py   # 10 unit tests for word-alignment logic
+│
 ├── website/
-│   ├── index.html      # Interactive token-level analyzer (calls /analyze)
-│   ├── results.html    # Results dashboard with all 17 experiment comparisons
-│   └── analysis.html   # Interpretability dashboard (figures + stats from /analysis)
-└── results/
-    ├── checkpoints/    # Saved model weights  (<exp_id>-<task>-s<seed>.pt)
-    ├── metrics/        # JSON metric files + aggregated.json
-    ├── logs/           # Per-epoch CSV training logs
-    └── figures/        # Interpretability PNGs + *_stats.json
+│   ├── index.html          # Interactive token-level analyzer (calls /analyze)
+│   ├── results.html        # Results dashboard — all 17 experiments
+│   ├── analysis.html       # Interpretability dashboard (figures + stats)
+│   └── README.md           # How to run api.py and verify the model
+│
+├── results/                # Generated outputs (gitignored: B1 checkpoints, *_records.json)
+│   ├── checkpoints/        # Model weights  (<exp_id>-<task>-s<seed>.pt)
+│   ├── metrics/            # JSON metric files + aggregated.json
+│   ├── logs/               # Per-epoch CSV training logs
+│   └── figures/            # Interpretability PNGs + *_stats.json
+│
+├── 01_admin/               # CS F425 submission — team info
+│   └── team_info.txt
+│
+├── 02_report/              # CS F425 submission — research paper
+│   ├── final_report.tex    # IEEE two-column LaTeX source
+│   ├── references.bib      # BibTeX (12 verified citations)
+│   └── DL_project.pdf      # Compiled IEEE paper
+│
+├── 03_code/                # CS F425 submission — code package
+│   ├── README.md
+│   ├── requirements.txt
+│   ├── configs/configs.py
+│   ├── scripts/            # Shell wrappers: train / eval / sweep / demo
+│   └── src/README.md       # Points to root Python source files
+│
+├── 04_data/                # CS F425 submission — dataset documentation
+│   ├── data_description.md
+│   ├── dataset_links.txt
+│   └── sample_inputs/      # Example LID and POS sentences (JSON)
+│
+├── 05_results/             # CS F425 submission — quantitative results
+│   ├── main_results.csv    # All 15 experiments × LID + POS, mean ± std
+│   ├── ablations.csv       # 4 ablation groups with deltas
+│   ├── figures/            # → see results/figures/
+│   └── logs/               # → see results/logs/
+│
+└── 07_claims/              # CS F425 submission — contribution statement
+    ├── prior_work_basis.md
+    └── claimed_contribution.md
 ```
 
 ### Module Responsibilities
