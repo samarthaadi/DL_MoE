@@ -1,0 +1,36 @@
+Dataset Links and Access Notes
+===============================
+
+1. COMI-LINGUA (LID)
+   Source   : HuggingFace Hub
+   ID       : LingoIITGN/COMI-LINGUA
+   Access   : Public — downloaded automatically via `datasets.load_dataset()`
+   URL      : https://huggingface.co/datasets/LingoIITGN/COMI-LINGUA
+
+2. Twitter Hindi-English POS Corpus
+   Source   : GitHub (raw TSV)
+   Access   : Public — downloaded automatically via urllib in data.py
+   URL      : https://raw.githubusercontent.com/SilentFlame/hindi-pos/master/data/hindi_pos_tagged.txt
+   Note     : 14-class universal tagset for Hindi-English code-mixed tweets
+
+3. Hindi-English NER Corpus
+   Source   : GitHub (raw CSV)
+   Access   : Public — downloaded automatically via urllib in data.py
+   URL      : https://raw.githubusercontent.com/SilentFlame/hindi-ner/master/data/ner_dataset.csv
+   Note     : BIO-tagged; PERSON, ORGANIZATION, LOCATION entity types
+
+Pre-trained Models
+==================
+4. HingBERT
+   Source   : HuggingFace Hub
+   ID       : l3cube-pune/hing-bert
+   URL      : https://huggingface.co/l3cube-pune/hing-bert
+   Size     : ~440 MB
+
+5. RoBERTa-base
+   Source   : HuggingFace Hub
+   ID       : roberta-base
+   URL      : https://huggingface.co/roberta-base
+   Size     : ~500 MB
+
+For offline use, run `python setup_data.py` to pre-download all assets into models_and_data/.

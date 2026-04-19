@@ -1,0 +1,20 @@
+[
+  {
+    "sentence": "mujhe bahut zyada hunger lag rahi hai",
+    "task": "pos",
+    "description": "Hinglish sentence for POS demo",
+    "note": "Expected tags: PRON ADV ADV NOUN VERB VERB VERB"
+  },
+  {
+    "sentence": "aaj maine ek bahut accha movie dekha",
+    "task": "pos",
+    "description": "Hindi sentence with English noun",
+    "note": "Expected tags: ADV PRON DET ADV ADJ NOUN VERB"
+  },
+  {
+    "sentence": "yaar kal ka presentation ready hai kya",
+    "task": "pos",
+    "description": "Casual Hinglish with question particle",
+    "note": "Expected tags: NOUN NOUN ADP NOUN ADJ VERB PART"
+  }
+]

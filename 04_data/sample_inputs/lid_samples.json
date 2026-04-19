@@ -1,0 +1,32 @@
+[
+  {
+    "sentence": "mujhe bahut zyada hunger lag rahi hai",
+    "task": "lid",
+    "description": "Classic Hinglish — Hindi structure with English content word",
+    "expected_pattern": "hi tokens dominant, 'hunger' likely en"
+  },
+  {
+    "sentence": "aaj maine ek bahut accha movie dekha",
+    "task": "lid",
+    "description": "Hindi-dominant with 'movie' as English borrowing",
+    "expected_pattern": "mostly hi, 'movie' as en or ot"
+  },
+  {
+    "sentence": "I love eating golgappe with chaat masala",
+    "task": "lid",
+    "description": "English-dominant with Hindi food terms",
+    "expected_pattern": "mostly en, Hindi nouns as ot"
+  },
+  {
+    "sentence": "yaar kal ka presentation ready hai kya",
+    "task": "lid",
+    "description": "Casual Hinglish — mix of Hindi and English",
+    "expected_pattern": "mixed hi/en, 'presentation' as en"
+  },
+  {
+    "sentence": "this project is really interesting and challenging",
+    "task": "lid",
+    "description": "Pure English sentence",
+    "expected_pattern": "all en tokens"
+  }
+]

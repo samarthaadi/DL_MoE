@@ -1,0 +1,16 @@
+exp_id,description,router_type,tau,routing_mode,lid_mean,lid_std,lid_seed42,lid_seed123,pos_mean,pos_std,pos_seed42,pos_seed123
+B1,HingBERT fine-tuned,none,null,none,0.8965,0.0023,0.8942,0.8987,0.9109,0.0011,0.9099,0.9120
+B2,HingBERT frozen,none,null,none,0.8055,0.0006,0.8050,0.8061,0.6523,0.0025,0.6548,0.6499
+B3,RoBERTa frozen,none,null,none,0.8148,0.0001,0.8149,0.8147,0.6318,0.0031,0.6349,0.6287
+B4,Fixed 50/50 avg,none,null,none,0.8041,0.0031,0.8009,0.8072,0.6110,0.0012,0.6098,0.6122
+R1,MoE MLP tau=1.0,mlp,1.0,soft token,0.8437,0.0321,0.8758,0.8117,0.6776,0.0150,0.6926,0.6626
+R2,MoE MLP tau=0.1,mlp,0.1,soft token,0.8898,0.0065,0.8833,0.8963,0.6699,0.0154,0.6545,0.6853
+R3,MoE MLP tau=0.3,mlp,0.3,soft token,0.8886,0.0029,0.8858,0.8915,0.6699,0.0125,0.6824,0.6574
+R4,MoE MLP tau=0.5,mlp,0.5,soft token,0.8843,0.0011,0.8832,0.8854,0.6691,0.0097,0.6788,0.6595
+R5,MoE MLP tau=2.0,mlp,2.0,soft token,0.8440,0.0324,0.8764,0.8116,0.6679,0.0028,0.6650,0.6707
+R6,MoE MLP sentence-level,mlp,1.0,soft sentence,0.8120,0.0004,0.8124,0.8116,0.6644,0.0018,0.6626,0.6662
+R7,MoE MLP hard routing,mlp,1.0,hard token,0.8758,0.0010,0.8768,0.8748,0.6520,0.0022,0.6497,0.6542
+R8,MoE BiGRU router,gru,1.0,soft token,0.8661,0.0063,0.8598,0.8724,0.6422,0.0217,0.6640,0.6205
+R9,MoE CNN router k=5,cnn,1.0,soft token,0.8829,0.0012,0.8817,0.8841,0.6678,0.0001,0.6677,0.6679
+A2,MoE MLP HingBERT input only,mlp,1.0,soft token,0.8606,0.0024,0.8629,0.8582,0.6723,0.0016,0.6707,0.6739
+A3,MoE MLP RoBERTa input only,mlp,1.0,soft token,0.8742,0.0008,0.8734,0.8750,0.6705,0.0017,0.6722,0.6688
