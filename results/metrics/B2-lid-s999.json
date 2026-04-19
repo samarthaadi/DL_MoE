@@ -1,0 +1,14 @@
+{
+  "val": {
+    "metric": 0.6742860682758847,
+    "weighted_f1": 0.6742860682758847
+  },
+  "test": {
+    "metric": 0.5299323386770687,
+    "weighted_f1": 0.5299323386770687
+  },
+  "config": {
+    "model_mode": "hingbert",
+    "frozen": true
+  }
+}

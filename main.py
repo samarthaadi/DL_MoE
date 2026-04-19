@@ -60,6 +60,7 @@ def _exp_config_from_args(args) -> dict:
         cfg["router_input"]   = args.router_input
         cfg["sentence_level"] = args.sentence_level
         cfg["hard_routing"]   = args.hard_routing
+        cfg["router_type"]    = args.router_type
     if args.model_mode == "hingbert":
         cfg["frozen"] = not args.no_frozen
     return cfg
@@ -129,9 +130,6 @@ def run_train(args):
     path  = ckpt_path(exp_id, args.task, args.seed)
     mpath = metrics_path(exp_id, args.task, args.seed)
     trainer.save_checkpoint(path, metrics=test_result, exp_config=exp_config)
-    if args.save_full:
-        full_path = path.replace(".pt", "_full.pt")
-        trainer.save_full_checkpoint(full_path, metrics=test_result, exp_config=exp_config)
     os.makedirs(os.path.dirname(mpath), exist_ok=True)
     with open(mpath, "w") as f:
         json.dump({"val": best_val, "test": test_result, "config": exp_config}, f, indent=2)
@@ -233,11 +231,6 @@ def run_sweep(args):
                 os.makedirs(os.path.dirname(cp), exist_ok=True)
                 os.makedirs(os.path.dirname(mp), exist_ok=True)
                 trainer.save_checkpoint(cp, metrics=test_result, exp_config=exp_config)
-                if args.save_full:
-                    trainer.save_full_checkpoint(
-                        cp.replace(".pt", "_full.pt"),
-                        metrics=test_result, exp_config=exp_config,
-                    )
                 with open(mp, "w") as f:
                     json.dump({"test": test_result, "config": exp_config}, f, indent=2)
 
@@ -276,6 +269,7 @@ def parse_args():
                    default="moe")
     p.add_argument("--tau",           type=float, default=1.0)
     p.add_argument("--router_input",  choices=["both", "hing", "rob"], default="both")
+    p.add_argument("--router_type",   choices=["mlp", "gru", "cnn"],  default="mlp")
     p.add_argument("--sentence_level", action="store_true")
     p.add_argument("--hard_routing",   action="store_true")
     p.add_argument("--no_frozen",      action="store_true",
@@ -295,8 +289,6 @@ def parse_args():
     p.add_argument("--batch_size", type=int, default=configs.BATCH_SIZE)
     p.add_argument("--max_epochs", type=int, default=None,
                    help="Override MAX_EPOCHS (e.g. 3 for a quick sanity check)")
-    p.add_argument("--save_full", action="store_true",
-                   help="Also save a full checkpoint with all weights (~1 GB, self-contained)")
 
     return p.parse_args()
 
@@ -314,6 +306,7 @@ def main():
         args.model_mode     = ec.get("model_mode",    args.model_mode)
         args.tau            = ec.get("tau",            args.tau)
         args.router_input   = ec.get("router_input",   args.router_input)
+        args.router_type    = ec.get("router_type",    args.router_type)
         args.sentence_level = ec.get("sentence_level", args.sentence_level)
         args.hard_routing   = ec.get("hard_routing",   args.hard_routing)
         args.no_frozen      = not ec.get("frozen",     True)

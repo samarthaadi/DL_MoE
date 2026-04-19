@@ -8,24 +8,17 @@ indexing via word_ids() regardless of each tokenizer's sub-word scheme.
 
 import ast
 import csv
-import io
 import random
 import re
-import urllib.request
 
 import torch
-from datasets import load_dataset
+from datasets import load_from_disk
 from torch.utils.data import DataLoader, Dataset
 
 import configs
 
 DEVANAGARI_RE = re.compile(r"[\u0900-\u097F]")
 
-_NER_URL = ("https://raw.githubusercontent.com/SilentFlame/"
-            "Named-Entity-Recognition/master/Twitterdata/annotatedData.csv")
-_POS_URL = ("https://raw.githubusercontent.com/soicalnlpataclAnon/"
-            "A-Twitter-Hindi-English-Code-Mixed-Dataset-for-POS-Tagging"
-            "/master/finalData.tsv")
 _NER_TAG_MAP = {
     "Other": "O",
     "B-Per": "B-PERSON",  "I-Per": "I-PERSON",
@@ -95,7 +88,7 @@ def load_comi_lingua(task: str):
     (words: list[str], labels: list[str]).
     """
     print(f"\nLoading COMI-LINGUA/{task.upper()} ...")
-    ds = load_dataset("LingoIITGN/COMI-LINGUA", task.upper())
+    ds = load_from_disk(f"models_and_data/comi_lingua/{task.upper()}")
 
     # Detect the annotation column (first one mentioning 'Annotator 1')
     cols = ds["train"].column_names
@@ -146,30 +139,24 @@ def load_comi_lingua(task: str):
     return results["train"], results["test"]
 
 
-def _fetch(url: str) -> str:
-    with urllib.request.urlopen(url, timeout=30) as r:
-        return r.read().decode("utf-8", "replace")
-
-
 def load_ner_data():
-    """Download SilentFlame Hindi-English NER; return (train_all, test_samples).
+    """Load SilentFlame Hindi-English NER from local file; return (train_all, test_samples).
 
     80/20 deterministic split (seed=0). Tags mapped to standard BIO.
     """
     print("\nLoading SilentFlame NER ...")
-    reader = csv.DictReader(io.StringIO(_fetch(_NER_URL)))
-
     sentences: dict = {}
-    for row in reader:
-        sid = (row.get("Sent") or "").strip()
-        word = (row.get("Word") or "").strip()
-        tag  = _NER_TAG_MAP.get((row.get("Tag") or "").strip(), "O")
-        if not sid or not word:
-            continue
-        if sid not in sentences:
-            sentences[sid] = ([], [])
-        sentences[sid][0].append(word)
-        sentences[sid][1].append(tag)
+    with open("models_and_data/annotatedData.csv", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            sid  = (row.get("Sent") or "").strip()
+            word = (row.get("Word") or "").strip()
+            tag  = _NER_TAG_MAP.get((row.get("Tag") or "").strip(), "O")
+            if not sid or not word:
+                continue
+            if sid not in sentences:
+                sentences[sid] = ([], [])
+            sentences[sid][0].append(word)
+            sentences[sid][1].append(tag)
 
     samples = [(w, l) for w, l in sentences.values() if w]
     rng = random.Random(0)
@@ -181,13 +168,15 @@ def load_ner_data():
 
 
 def load_pos_data():
-    """Download Twitter Hindi-English POS; return (train_all, test_samples).
+    """Load Twitter Hindi-English POS from local file; return (train_all, test_samples).
 
     80/20 deterministic split (seed=0). TSV: word<TAB>lang<TAB>pos.
     """
     print("\nLoading Twitter POS ...")
+    with open("models_and_data/finalData.tsv", encoding="utf-8") as f:
+        lines = f.read().splitlines()
     samples, words, labels = [], [], []
-    for line in _fetch(_POS_URL).splitlines():
+    for line in lines:
         parts = line.strip().split("\t")
         if len(parts) == 3:
             words.append(parts[0])
@@ -197,13 +186,6 @@ def load_pos_data():
             words, labels = [], []
     if words:
         samples.append((words, labels))
-
-    # Remap any label not in the known POS set to 'X' (catch-all tag)
-    known_pos = set(configs.TASK_LABELS["pos"])
-    samples = [
-        (w, [l if l in known_pos else "X" for l in ls])
-        for w, ls in samples
-    ]
 
     rng = random.Random(0)
     rng.shuffle(samples)
@@ -250,7 +232,7 @@ def _tokenize_sample(words, labels, label2id, hing_tok, rob_tok, max_len):
     rob_max  = max((w for w in rob_wids  if w is not None), default=-1) + 1
     num_words = min(hing_max, rob_max, len(words))
 
-    label_ids = [label2id.get(l, 0) for l in labels[:num_words]]
+    label_ids = [label2id[l] for l in labels[:num_words]]
 
     return {
         "hing_input_ids":      hing_enc.input_ids.squeeze(0),       # (max_len,)

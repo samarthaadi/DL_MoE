@@ -104,8 +104,7 @@ class Trainer:
         """Train with early stopping. Returns best val metrics dict."""
         import csv
         best_metric, patience_cnt = -float("inf"), 0
-        best_state      = None
-        best_val_result = {"metric": 0.0}
+        best_state  = None
         label_names = configs.TASK_LABELS[self.task]
         metric_name = configs.TASK_METRICS[self.task]
         epoch_log   = []
@@ -192,41 +191,17 @@ class Trainer:
         }, path)
         print(f"  Checkpoint saved -> {path}", flush=True)
 
-    def save_full_checkpoint(self, path: str, metrics: dict = None, exp_config: dict = None):
-        """Save the complete model state_dict (all params including frozen experts).
-
-        Produces a self-contained file (~1 GB) that can be loaded for inference
-        without downloading HuggingFace models.
-        """
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        torch.save({
-            "state_dict": {n: p.data.cpu().clone()
-                           for n, p in self.model.named_parameters()},
-            "metrics":    metrics    or {},
-            "exp_config": exp_config or {},
-            "task":       self.task,
-        }, path)
-        size_mb = os.path.getsize(path) / 1e6
-        print(f"  Full checkpoint saved -> {path}  ({size_mb:.0f} MB)", flush=True)
-
     @staticmethod
     def load_checkpoint(path: str, model) -> tuple:
         """Load trainable weights into model. Returns (metrics, exp_config)."""
-        ckpt        = torch.load(path, map_location="cpu", weights_only=True)
+        ckpt        = torch.load(path, map_location="cpu")
         model_params = dict(model.named_parameters())
-        # Support both slim (trainable-only) and full (state_dict) checkpoints
-        weights = ckpt.get("state_dict") or ckpt.get("trainable", {})
-        for name, data in weights.items():
+        for name, data in ckpt["trainable"].items():
             if name in model_params and model_params[name].shape == data.shape:
                 model_params[name].data.copy_(data)
             else:
                 print(f"  Warning: skipping param {name!r} (shape mismatch or not found)")
         return ckpt.get("metrics", {}), ckpt.get("exp_config", {})
-
-    @staticmethod
-    def load_full_checkpoint(path: str, model) -> tuple:
-        """Load a full checkpoint (state_dict) into model. Returns (metrics, exp_config)."""
-        return Trainer.load_checkpoint(path, model)
 
 
 # ---------------------------------------------------------------------------

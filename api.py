@@ -64,14 +64,41 @@ def _get_model(task: str, checkpoint_path: str | None):
     key = (task, checkpoint_path)
     if key not in _model_cache:
         print(f"[API] Building model  task={task}  ckpt={checkpoint_path}")
-        exp_config = {"model_mode": "moe", "tau": 1.0}
-        model = build_model(exp_config, task, DEVICE)
 
-        if checkpoint_path and os.path.exists(checkpoint_path):
-            metrics, _ = Trainer.load_checkpoint(checkpoint_path, model)
-            print(f"[API] Checkpoint loaded — saved metrics: {metrics}")
-        else:
+        if checkpoint_path is None:
+            exp_config = {"model_mode": "moe", "tau": 1.0}
+            model = build_model(exp_config, task, DEVICE)
             print("[API] No checkpoint — using frozen experts + random router.")
+        else:
+            if not os.path.exists(checkpoint_path):
+                raise FileNotFoundError(
+                    f"Checkpoint not found: {checkpoint_path!r}. "
+                    "Refusing to fall back to a default model when a checkpoint was requested."
+                )
+
+            ckpt_data  = torch.load(checkpoint_path, map_location="cpu")
+            exp_config = ckpt_data.get("exp_config") or {}
+            ckpt_task  = ckpt_data.get("task")
+
+            if not exp_config:
+                raise ValueError(
+                    f"Checkpoint {checkpoint_path!r} has no 'exp_config'. "
+                    "Re-train with current code (Trainer.save_checkpoint persists exp_config)."
+                )
+            if ckpt_task is None:
+                raise ValueError(
+                    f"Checkpoint {checkpoint_path!r} has no 'task' field. "
+                    "Refusing to load because task-specific label decoding cannot be verified."
+                )
+            if ckpt_task != task:
+                raise ValueError(
+                    f"Checkpoint task {ckpt_task!r} does not match requested task {task!r}. "
+                    "Checkpoints are task-specific."
+                )
+
+            model = build_model(exp_config, task, DEVICE)
+            metrics, _ = Trainer.load_checkpoint(checkpoint_path, model)
+            print(f"[API] Checkpoint loaded  config={exp_config}  metrics={metrics}")
 
         model.eval()
         _model_cache[key] = model
@@ -193,7 +220,10 @@ def analyze():
         ckpt_path = _find_best_checkpoint(task)
 
     # --- Run model -------------------------------------------------------
-    model = _get_model(task, ckpt_path)
+    try:
+        model = _get_model(task, ckpt_path)
+    except (ValueError, FileNotFoundError) as e:
+        return jsonify({"error": str(e)}), 400
 
     with torch.no_grad():
         out = model(batch)
@@ -204,24 +234,24 @@ def analyze():
     alpha   = out.get("alpha")
     l2_dist = out.get("l2_disagreement")
 
-    # Also capture raw hidden-state expert outputs for display
-    # Re-run experts separately (still no_grad — frozen)
-    with torch.no_grad():
-        h_hing_sub = model.hing_expert(
-            batch["hing_input_ids"], batch["hing_attention_mask"]
-        )
-        h_rob_sub = model.rob_expert(
-            batch["rob_input_ids"], batch["rob_attention_mask"]
-        )
+    # Per-token L2 disagreement — only meaningful when the model has both experts
+    has_both_experts = hasattr(model, "hing_expert") and hasattr(model, "rob_expert")
 
-    h_hing = align_subtokens_to_words(h_hing_sub[0], hing_wids, num_words).cpu()
-    h_rob  = align_subtokens_to_words(h_rob_sub[0],  rob_wids,  num_words).cpu()
-
-    # Per-token L2 disagreement (recompute if not provided by model)
-    if l2_dist is None:
+    if l2_dist is not None:
+        l2_vals = l2_dist[0, :num_words].cpu().tolist()
+    elif has_both_experts:
+        with torch.no_grad():
+            h_hing_sub = model.hing_expert(
+                batch["hing_input_ids"], batch["hing_attention_mask"]
+            )
+            h_rob_sub = model.rob_expert(
+                batch["rob_input_ids"], batch["rob_attention_mask"]
+            )
+        h_hing = align_subtokens_to_words(h_hing_sub[0], hing_wids, num_words).cpu()
+        h_rob  = align_subtokens_to_words(h_rob_sub[0],  rob_wids,  num_words).cpu()
         l2_vals = torch.norm(h_hing - h_rob, dim=-1).tolist()
     else:
-        l2_vals = l2_dist[0, :num_words].cpu().tolist()
+        l2_vals = [None] * num_words
 
     # --- Build response --------------------------------------------------
     tokens = []
@@ -241,7 +271,7 @@ def analyze():
             "prediction":      pred_label,
             "confidence":      round(confidence, 4),
             "alpha":           round(token_alpha, 4) if token_alpha is not None else None,
-            "l2_disagreement": round(l2_vals[i], 4),
+            "l2_disagreement": round(l2_vals[i], 4) if l2_vals[i] is not None else None,
             "all_probs":       {
                 label_list[j]: round(probs[i, j].item(), 4)
                 for j in range(len(label_list))
