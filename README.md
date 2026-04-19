@@ -486,11 +486,11 @@ The test suite (10 tests in `tests/test_alignment.py`) covers:
 | `torch` | ≥ 2.0.0 | Model training and inference |
 | `transformers` | ≥ 4.35.0 | HingBERT, RoBERTa, tokenizers, schedulers |
 | `datasets` | ≥ 2.14.0 | COMI-LINGUA loading from HuggingFace Hub |
+| `numpy` | ≥ 1.24.0 | Numerical operations and aggregation |
 | `scikit-learn` | ≥ 1.3.0 | F1 / accuracy metrics |
 | `seqeval` | ≥ 1.2.2 | Entity-level NER F1 |
 | `matplotlib` | ≥ 3.7.0 | Figure generation |
 | `seaborn` | ≥ 0.12.0 | KDE plots and styling |
-| `flask` | ≥ 2.3.0 | REST API server |
+| `flask` | ≥ 3.0.0 | REST API server |
 | `flask-cors` | ≥ 4.0.0 | Cross-origin requests for web pages |
-| `scipy` | ≥ 1.11.0 | Pearson correlation in analysis |
 | `pytest` | ≥ 7.4.0 | Unit testing |
