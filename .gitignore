@@ -5,9 +5,9 @@ __pycache__/
 *.py[cod]
 
 # PyTorch checkpoints
-*.pt
+# B1 checkpoints include full HingBERT weights (~418 MB each) — exceed GitHub's 100 MB limit
+results/checkpoints/B1-*.pt
 *.pth
-results/checkpoints/
 
 # Large model/data assets (download via setup_data.py)
 models_and_data/
