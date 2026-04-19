@@ -1,0 +1,11 @@
+{
+  "test": {
+    "metric": 0.6497225970910181,
+    "accuracy": 0.6497225970910181
+  },
+  "config": {
+    "model_mode": "moe",
+    "tau": 1.0,
+    "hard_routing": true
+  }
+}

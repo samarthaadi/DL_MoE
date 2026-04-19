@@ -1,0 +1,17 @@
+{
+  "val": {
+    "metric": 0.6744276290259992,
+    "accuracy": 0.6744276290259992
+  },
+  "test": {
+    "metric": 0.6722147248463038,
+    "accuracy": 0.6722147248463038
+  },
+  "config": {
+    "model_mode": "moe",
+    "tau": 1.0,
+    "router_input": "rob",
+    "sentence_level": false,
+    "hard_routing": false
+  }
+}

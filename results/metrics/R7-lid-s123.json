@@ -1,0 +1,11 @@
+{
+  "test": {
+    "metric": 0.876786808321662,
+    "weighted_f1": 0.876786808321662
+  },
+  "config": {
+    "model_mode": "moe",
+    "tau": 1.0,
+    "hard_routing": true
+  }
+}

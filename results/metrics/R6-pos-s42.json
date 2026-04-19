@@ -1,0 +1,11 @@
+{
+  "test": {
+    "metric": 0.6626180836707153,
+    "accuracy": 0.6626180836707153
+  },
+  "config": {
+    "model_mode": "moe",
+    "tau": 1.0,
+    "sentence_level": true
+  }
+}

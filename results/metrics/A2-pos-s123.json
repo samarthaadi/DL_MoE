@@ -1,0 +1,11 @@
+{
+  "test": {
+    "metric": 0.6707152496626181,
+    "accuracy": 0.6707152496626181
+  },
+  "config": {
+    "model_mode": "moe",
+    "tau": 1.0,
+    "router_input": "hing"
+  }
+}
