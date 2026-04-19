@@ -1,5 +1,5 @@
-HINGBERT = "l3cube-pune/hing-bert"
-ROBERTA = "roberta-base"
+HINGBERT = "models_and_data/hing-bert"
+ROBERTA  = "models_and_data/roberta-base"
 
 TASK_LABELS = {
     "lid": ["hi", "en", "ot"],
@@ -46,6 +46,8 @@ EXPERIMENTS = {
     "R5": {"model_mode": "moe", "tau": 2.0},
     "R6": {"model_mode": "moe", "tau": 1.0, "sentence_level": True},
     "R7": {"model_mode": "moe", "tau": 1.0, "hard_routing": True},
+    "R8": {"model_mode": "moe", "tau": 1.0, "router_type": "gru"},
+    "R9": {"model_mode": "moe", "tau": 1.0, "router_type": "cnn"},
     # Ablations (A1 == R1, reuse its results)
     "A2": {"model_mode": "moe", "tau": 1.0, "router_input": "hing"},
     "A3": {"model_mode": "moe", "tau": 1.0, "router_input": "rob"},

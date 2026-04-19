@@ -1,0 +1,12 @@
+{
+  "pos": {
+    "mean_alpha": 0.85391,
+    "std_alpha": 0.30807,
+    "count": 6669
+  },
+  "lid": {
+    "mean_alpha": 0.4289,
+    "std_alpha": 0.40741,
+    "count": 18437
+  }
+}

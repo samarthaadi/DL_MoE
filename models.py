@@ -1,8 +1,9 @@
 """
-Model definitions: frozen experts, router MLP, full MoE model, baselines.
+Model definitions: frozen experts, full MoE model, baselines.
 
+Router architectures live in routers.py (MLP, GRU, CNN).
 All expert parameters are frozen by default (requires_grad=False).
-Only the router MLP and task head receive gradients.
+Only the router and task head receive gradients.
 Exception: B1 baseline (SingleExpertModel with frozen=False).
 """
 
@@ -11,6 +12,7 @@ import torch.nn as nn
 from transformers import AutoModel
 
 import configs
+from routers import build_router
 
 
 # ---------------------------------------------------------------------------
@@ -67,50 +69,7 @@ class FrozenExpert(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Router MLP
-# ---------------------------------------------------------------------------
-
-class RouterMLP(nn.Module):
-    """Blending router: input → scalar α ∈ (0,1) per token position.
-
-    Handles:
-      - Word-level input:     (B, T, input_dim) → (B, T, 1)
-      - Sentence-level input: (B, input_dim)    → (B, 1)
-      - Hard routing (R7):    straight-through estimator at threshold 0.5
-    """
-
-    def __init__(
-        self,
-        input_dim:    int   = 1536,
-        hidden_dim:   int   = 256,
-        tau:          float = 1.0,
-        hard_routing: bool  = False,
-    ):
-        super().__init__()
-        self.tau          = tau
-        self.hard_routing = hard_routing
-        self.linear1 = nn.Linear(input_dim, hidden_dim)
-        self.gelu    = nn.GELU()
-        self.linear2 = nn.Linear(hidden_dim, 1)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """x: (..., input_dim) → α: (..., 1)"""
-        logit      = self.linear2(self.gelu(self.linear1(x)))
-        alpha_soft = torch.sigmoid(logit / self.tau)
-
-        if self.hard_routing:
-            alpha_hard = (alpha_soft >= 0.5).to(alpha_soft.dtype)
-            if self.training:
-                # Straight-through estimator: hard forward, soft gradient
-                return alpha_hard - alpha_soft.detach() + alpha_soft
-            else:
-                return alpha_hard
-
-        return alpha_soft
-
-
-# ---------------------------------------------------------------------------
-# Full MoE model (R1–R7, A2–A3)
+# Full MoE model (R1–R9, A2–A3)
 # ---------------------------------------------------------------------------
 
 class MoEModel(nn.Module):
@@ -121,6 +80,7 @@ class MoEModel(nn.Module):
         router_input:   str   = "both",   # "both" | "hing" | "rob"
         sentence_level: bool  = False,
         hard_routing:   bool  = False,
+        router_type:    str   = "mlp",    # "mlp" | "gru" | "cnn"
     ):
         super().__init__()
         self.router_input   = router_input
@@ -137,7 +97,10 @@ class MoEModel(nn.Module):
         else:
             router_dim = 768
 
-        self.router    = RouterMLP(router_dim, tau=tau, hard_routing=hard_routing)
+        self.router = build_router(
+            router_type, router_dim,
+            tau=tau, hard_routing=hard_routing, sentence_level=sentence_level,
+        )
         self.task_head = nn.Linear(768, num_labels)
 
     def forward(self, batch: dict) -> dict:
@@ -164,6 +127,7 @@ class MoEModel(nn.Module):
         ])
 
         # ---- Router ----------------------------------------------------------
+        word_lens = batch["num_words"]   # (B,) — used by sequence routers (GRU)
         if self.sentence_level:
             # Use CLS (position 0) hidden states from both experts
             cls_combined = torch.cat(
@@ -178,7 +142,7 @@ class MoEModel(nn.Module):
                 router_in = h_rob
             else:
                 router_in = torch.cat([h_hing, h_rob], dim=-1)   # (B, T, 1536)
-            alpha = self.router(router_in)   # (B, T, 1)
+            alpha = self.router(router_in, word_lens=word_lens)   # (B, T, 1)
 
         # ---- Blend + task head ---------------------------------------------
         blended = alpha * h_hing + (1 - alpha) * h_rob   # (B, T, 768)
@@ -281,6 +245,7 @@ def build_model(exp_config: dict, task: str, device: str = "cpu") -> nn.Module:
             router_input   = exp_config.get("router_input",   "both"),
             sentence_level = exp_config.get("sentence_level", False),
             hard_routing   = exp_config.get("hard_routing",   False),
+            router_type    = exp_config.get("router_type",    "mlp"),
         )
     elif model_mode == "hingbert":
         model = SingleExpertModel(

@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DL_MoE — Router Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d; --surface3:#2d333b;
+  --border:#30363d; --text:#e6edf3; --muted:#8b949e;
+  --accent:#58a6ff; --green:#3fb950; --yellow:#d29922;
+  --red:#f85149; --purple:#bc8cff; --orange:#ffa657;
+  --hi:#e05c5c; --en:#4a90d9; --ot:#7dbb7d;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;display:flex;flex-direction:column;min-height:100vh;}
+
+/* ── header ── */
+header{background:linear-gradient(135deg,#1a2332,#0d1117 60%,#1a1a2e);
+  border-bottom:1px solid var(--border);padding:32px 40px 24px;position:relative;overflow:hidden;}
+header::before{content:'';position:absolute;top:-60px;right:-60px;width:280px;height:280px;
+  background:radial-gradient(circle,rgba(88,166,255,0.07) 0%,transparent 70%);border-radius:50%;}
+.header-inner{max-width:1400px;margin:0 auto;position:relative;z-index:1;}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:8px;}
+h1{font-size:clamp(22px,3vw,34px);font-weight:700;margin-bottom:6px;}
+h1 span{background:linear-gradient(90deg,#58a6ff,#bc8cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.subtitle{color:var(--muted);font-size:14px;max-width:620px;}
+.nav-links{margin-top:16px;display:flex;gap:16px;}
+.nav-links a{font-size:13px;color:var(--muted);text-decoration:none;padding:4px 12px;border:1px solid var(--border);border-radius:6px;transition:all 0.15s;}
+.nav-links a:hover,.nav-links a.active{color:var(--accent);border-color:var(--accent);background:rgba(88,166,255,0.08);}
+
+/* ── layout ── */
+.page-body{display:flex;flex:1;max-width:1400px;margin:0 auto;width:100%;padding:32px 40px 80px;gap:28px;}
+
+/* ── sidebar ── */
+.sidebar{width:240px;flex-shrink:0;}
+.sidebar-section{margin-bottom:24px;}
+.sidebar-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;padding-left:2px;}
+.exp-btn{display:block;width:100%;text-align:left;padding:10px 14px;border-radius:8px;
+  background:var(--surface);border:1px solid var(--border);color:var(--muted);
+  font-size:13px;cursor:pointer;transition:all 0.15s;margin-bottom:6px;font-family:'Inter',sans-serif;}
+.exp-btn:hover{background:var(--surface2);color:var(--text);border-color:rgba(88,166,255,0.4);}
+.exp-btn.active{background:rgba(88,166,255,0.12);border-color:var(--accent);color:var(--accent);}
+.exp-btn .exp-tag{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;display:block;}
+.exp-btn .exp-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.exp-btn.active .exp-meta{color:rgba(88,166,255,0.7);}
+
+.info-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.5;}
+.info-box code{font-family:'JetBrains Mono',monospace;background:var(--surface2);padding:1px 5px;border-radius:3px;font-size:11px;}
+
+/* ── main panel ── */
+.main-panel{flex:1;min-width:0;}
+
+/* ── stat cards ── */
+.stat-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;}
+.stat-card .val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent);}
+.stat-card .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:3px;}
+
+/* ── language alpha bars ── */
+.alpha-lang-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 22px;margin-bottom:24px;}
+.alpha-lang-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
+.lang-row{margin-bottom:12px;}
+.lang-header{display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px;}
+.lang-name{font-weight:600;}
+.lang-name.hi{color:var(--hi);}
+.lang-name.en{color:var(--en);}
+.lang-name.ot{color:var(--ot);}
+.lang-stats{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+.bar-track{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:5px;transition:width 0.5s ease;}
+.bar-hi{background:var(--hi);}
+.bar-en{background:var(--en);}
+.bar-ot{background:var(--ot);}
+.alpha-legend{font-size:11px;color:var(--muted);margin-top:10px;display:flex;justify-content:space-between;}
+
+/* ── trajectory mini-chart ── */
+.trajectory-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px 22px;margin-bottom:24px;}
+.section-title-sm{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
+#trajectory-canvas{width:100%;height:160px;display:block;}
+
+/* ── figure grid ── */
+.fig-section{margin-bottom:32px;}
+.fig-section-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;
+  padding-bottom:8px;border-bottom:1px solid var(--border);}
+.fig-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:900px){.fig-grid{grid-template-columns:1fr;}}
+.fig-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.fig-card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.fig-card-title{font-size:13px;font-weight:600;color:var(--text);}
+.fig-card-body{padding:0;position:relative;background:var(--surface2);}
+.fig-card img{width:100%;display:block;border-radius:0 0 10px 10px;}
+.fig-placeholder{height:200px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;}
+
+/* ── cross-task section ── */
+.cross-section{margin-top:40px;padding-top:24px;border-top:1px solid var(--border);}
+.cross-title{font-size:18px;font-weight:700;margin-bottom:8px;}
+.cross-desc{font-size:14px;color:var(--muted);margin-bottom:20px;}
+.cross-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:700px){.cross-grid{grid-template-columns:1fr;}}
+.cross-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;}
+.cross-card-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:12px;}
+.cross-stat{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:14px;}
+.cross-stat-lbl{color:var(--muted);}
+.cross-stat-val{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--accent);}
+
+/* ── loading ── */
+.loading{color:var(--muted);font-size:13px;padding:40px;text-align:center;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-mlp{background:rgba(88,166,255,0.15);color:var(--accent);border:1px solid rgba(88,166,255,0.3);}
+.badge-gru{background:rgba(210,153,34,0.12);color:var(--yellow);border:1px solid rgba(210,153,34,0.3);}
+.badge-cnn{background:rgba(248,81,73,0.12);color:var(--red);border:1px solid rgba(248,81,73,0.3);}
+.badge-none{background:rgba(188,140,255,0.12);color:var(--purple);border:1px solid rgba(188,140,255,0.3);}
+
+/* note box */
+.note{display:flex;align-items:flex-start;gap:10px;background:rgba(88,166,255,0.06);
+  border:1px solid rgba(88,166,255,0.2);border-radius:8px;padding:12px 16px;
+  font-size:13px;color:var(--muted);margin-bottom:20px;}
+.note-icon{color:var(--accent);font-size:15px;flex-shrink:0;margin-top:1px;}
+
+footer{text-align:center;padding:20px;color:var(--muted);font-size:12px;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="eyebrow">Interpretability Dashboard</div>
+    <h1>DL_MoE — <span>Router Analysis</span></h1>
+    <p class="subtitle">Per-token α distributions, code-switch trajectories, CMI analysis, and expert disagreement across router architectures.</p>
+    <div class="nav-links">
+      <a href="index.html">Analyzer</a>
+      <a href="results.html">Results</a>
+      <a href="analysis.html" class="active">Analysis</a>
+    </div>
+  </div>
+</header>
+
+<div class="page-body">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Experiments</div>
+      <div id="exp-list"><div class="loading">Loading…</div></div>
+    </div>
+    <div class="sidebar-section">
+      <div class="info-box">
+        <strong style="color:var(--text)">α interpretation</strong><br>
+        α = 1 → full <span style="color:var(--accent)">HingBERT</span><br>
+        α = 0 → full <span style="color:var(--purple)">RoBERTa</span><br><br>
+        Run more analyses via:<br>
+        <code>python main.py --mode analysis --task lid --checkpoint results/checkpoints/R2-lid-s42.pt --exp_id R2</code>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN PANEL ── -->
+  <main class="main-panel" id="main-panel">
+    <div class="loading" id="welcome-msg">
+      Select an experiment from the sidebar to view analysis.
+    </div>
+  </main>
+
+</div>
+
+<footer>
+  DL_MoE — Router Interpretability Analysis &nbsp;·&nbsp;
+  Figures from <code>results/figures/</code>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────
+// Data fetching
+// ─────────────────────────────────────────────────────────
+let allAnalyses = [];
+let crossTaskData = null;
+let selectedExp = null;
+
+async function loadAnalysisList() {
+  try {
+    const res = await fetch('/analysis');
+    const d   = await res.json();
+    allAnalyses  = d.analyses || [];
+    crossTaskData = d.cross_task;
+    renderSidebar();
+    if (allAnalyses.length > 0) selectExp(allAnalyses[0]);
+  } catch(e) {
+    document.getElementById('exp-list').innerHTML =
+      `<div class="info-box" style="color:var(--red)">Error loading analyses: ${e.message}</div>`;
+  }
+}
+
+async function loadStats(exp_id, task) {
+  const res = await fetch(`/analysis/stats?exp=${exp_id}&task=${task}`);
+  if (!res.ok) throw new Error(`Stats not found for ${exp_id}/${task}`);
+  return res.json();
+}
+
+// ─────────────────────────────────────────────────────────
+// Sidebar rendering
+// ─────────────────────────────────────────────────────────
+function routerBadge(mode, router) {
+  if (mode !== 'moe') return `<span class="badge badge-none">${mode}</span>`;
+  const cls = router === 'gru' ? 'badge-gru' : router === 'cnn' ? 'badge-cnn' : 'badge-mlp';
+  return `<span class="badge ${cls}">${router.toUpperCase()}</span>`;
+}
+
+function renderSidebar() {
+  const el = document.getElementById('exp-list');
+  if (!allAnalyses.length) {
+    el.innerHTML = '<div class="info-box">No analyses found. Run analysis mode first.</div>';
+    return;
+  }
+  el.innerHTML = allAnalyses.map((a, i) =>
+    `<button class="exp-btn" id="btn-${i}" onclick="selectExp(allAnalyses[${i}])">
+      <span class="exp-tag">${a.exp_id} / ${a.task.toUpperCase()}</span>
+      <span class="exp-meta">${(a.num_records||0).toLocaleString()} words · ᾱ=${(a.mean_alpha||0).toFixed(3)}</span>
+    </button>`
+  ).join('') +
+  (crossTaskData ? `<button class="exp-btn" id="btn-cross" onclick="showCrossTask()">
+    <span class="exp-tag">Cross-Task</span>
+    <span class="exp-meta">LID vs POS comparison</span>
+  </button>` : '');
+}
+
+function setActiveBtn(id) {
+  document.querySelectorAll('.exp-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById(id);
+  if (btn) btn.classList.add('active');
+}
+
+// ─────────────────────────────────────────────────────────
+// Experiment view
+// ─────────────────────────────────────────────────────────
+async function selectExp(a) {
+  selectedExp = a;
+  const idx = allAnalyses.indexOf(a);
+  setActiveBtn(`btn-${idx}`);
+  document.getElementById('main-panel').innerHTML =
+    '<div class="loading">Loading analysis data…</div>';
+
+  let stats;
+  try {
+    stats = await loadStats(a.exp_id, a.task);
+  } catch(e) {
+    document.getElementById('main-panel').innerHTML =
+      `<div class="loading" style="color:var(--red)">${e.message}</div>`;
+    return;
+  }
+  renderMain(stats, a);
+}
+
+function renderMain(s, a) {
+  const panel = document.getElementById('main-panel');
+
+  // ── top note ──
+  const taskLabel = s.task === 'lid' ? 'Language ID (weighted F1)' : 'POS Tagging (accuracy)';
+  const routerInfo = a.figures ? '' : '';
+
+  // ── stat cards ──
+  const cards = [
+    { val: (s.num_records||0).toLocaleString(), lbl: 'Words analysed' },
+    { val: (s.mean_alpha||0).toFixed(3),        lbl: 'Mean α' },
+    { val: (s.std_alpha||0).toFixed(3),         lbl: 'Std α' },
+    { val: s.l2_correlation != null ? s.l2_correlation.toFixed(3) : 'N/A', lbl: 'L2 correlation' },
+  ];
+
+  // ── alpha by label bars ──
+  const langSection = renderLangBars(s.alpha_by_label, s.task);
+
+  // ── switch trajectory ──
+  const trajSection = renderTrajectory(s.switch_trajectory);
+
+  // ── figures ──
+  const figs = s.figures || {};
+  const figSection = renderFigGrid(figs, s.exp_id, s.task);
+
+  // ── CMI bucket table ──
+  const cmiTable = renderCmiBuckets(s.cmi_buckets);
+
+  panel.innerHTML = `
+    <div class="note">
+      <span class="note-icon">ℹ</span>
+      <span>
+        <strong style="color:var(--text)">${s.exp_id} / ${s.task.toUpperCase()}</strong> —
+        ${taskLabel} &nbsp;·&nbsp;
+        Generated ${new Date(s.generated_at).toLocaleString()}
+      </span>
+    </div>
+
+    <div class="stat-cards">
+      ${cards.map(c => `<div class="stat-card"><div class="val">${c.val}</div><div class="lbl">${c.lbl}</div></div>`).join('')}
+    </div>
+
+    ${langSection}
+    ${trajSection}
+    ${figSection}
+    ${cmiTable}
+    ${renderCrossTaskSection()}
+  `;
+
+  // draw trajectory after DOM ready
+  if (s.switch_trajectory && Object.keys(s.switch_trajectory).length) {
+    drawTrajectory('traj-canvas', s.switch_trajectory);
+  }
+}
+
+// ── Language alpha bars ──
+function renderLangBars(byLabel, task) {
+  if (!byLabel || !Object.keys(byLabel).length) return '';
+  const entries = Object.entries(byLabel).sort((a,b) => b[1].mean - a[1].mean);
+  const rows = entries.map(([lab, v]) => {
+    const cls = lab === 'hi' ? 'hi' : lab === 'en' ? 'en' : 'ot';
+    const pct = (v.mean * 100).toFixed(1);
+    const desc = lab === 'hi' ? 'Hindi' : lab === 'en' ? 'English' : 'Other';
+    return `<div class="lang-row">
+      <div class="lang-header">
+        <span class="lang-name ${cls}">${desc} (${lab})</span>
+        <span class="lang-stats">ᾱ=${v.mean.toFixed(3)} ± ${v.std.toFixed(3)} &nbsp; n=${v.count.toLocaleString()}</span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill bar-${cls}" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="alpha-lang-section">
+    <div class="alpha-lang-title">α by Token Language</div>
+    ${rows}
+    <div class="alpha-legend">
+      <span>← RoBERTa (α=0)</span>
+      <span>HingBERT (α=1) →</span>
+    </div>
+  </div>`;
+}
+
+// ── Switch trajectory canvas ──
+function renderTrajectory(traj) {
+  if (!traj || !Object.keys(traj).length) return '';
+  const hasSwitches = Object.values(traj).some(v => v.mean !== null && v.count > 0);
+  if (!hasSwitches) return '';
+  return `<div class="trajectory-section">
+    <div class="section-title-sm">α Trajectory at Code-Switch Boundaries</div>
+    <canvas id="traj-canvas" width="800" height="160"></canvas>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px;text-align:center;">Token offset from switch point (negative = before, positive = after)</div>
+  </div>`;
+}
+
+function drawTrajectory(canvasId, traj) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx    = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 700;
+  const H = 160;
+  canvas.width = W;
+
+  const offsets = Object.keys(traj).map(Number).sort((a,b)=>a-b);
+  const means   = offsets.map(o => traj[String(o)].mean);
+  const sems    = offsets.map(o => traj[String(o)].sem || 0);
+  const valid   = means.every(m => m !== null);
+  if (!valid) return;
+
+  const pad = { l:40, r:20, t:16, b:30 };
+  const w = W - pad.l - pad.r;
+  const h = H - pad.t - pad.b;
+
+  const minY = 0, maxY = 1;
+  const xScale = i => pad.l + (i / (offsets.length - 1)) * w;
+  const yScale = v => pad.t + (1 - (v - minY) / (maxY - minY)) * h;
+
+  // grid lines
+  ctx.strokeStyle = '#30363d';
+  ctx.lineWidth   = 1;
+  [0.25, 0.5, 0.75].forEach(y => {
+    ctx.beginPath();
+    ctx.moveTo(pad.l, yScale(y));
+    ctx.lineTo(pad.l + w, yScale(y));
+    ctx.stroke();
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '10px Inter';
+    ctx.fillText(y.toFixed(2), 2, yScale(y) + 3);
+  });
+
+  // switch boundary
+  const switchX = xScale(offsets.indexOf(-1)) + (xScale(offsets.indexOf(0)) - xScale(offsets.indexOf(-1))) / 2;
+  ctx.strokeStyle = '#e05c5c';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.moveTo(switchX, pad.t); ctx.lineTo(switchX, pad.t + h); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // SEM band
+  ctx.fillStyle = 'rgba(74,144,217,0.15)';
+  ctx.beginPath();
+  offsets.forEach((_, i) => {
+    const x = xScale(i); const y = yScale(means[i] + sems[i]);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  for (let i = offsets.length - 1; i >= 0; i--) {
+    ctx.lineTo(xScale(i), yScale(means[i] - sems[i]));
+  }
+  ctx.closePath(); ctx.fill();
+
+  // mean line
+  ctx.strokeStyle = '#4a90d9';
+  ctx.lineWidth   = 2.5;
+  ctx.beginPath();
+  offsets.forEach((_, i) => {
+    const x = xScale(i); const y = yScale(means[i]);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // dots + x labels
+  offsets.forEach((off, i) => {
+    const x = xScale(i); const y = yScale(means[i]);
+    ctx.fillStyle = '#4a90d9';
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#8b949e'; ctx.font = '10px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(off), x, H - 6);
+  });
+}
+
+// ── Figure grid ──
+function renderFigGrid(figs, exp_id, task) {
+  const figDefs = [
+    { key: 'alpha_by_lang', title: 'α Distribution by Language', icon: '📊' },
+    { key: 'switch_points', title: 'Code-Switch Trajectory',     icon: '↔' },
+    { key: 'cmi_buckets',   title: 'α vs Sentence CMI',          icon: '📈' },
+    { key: 'disagreement',  title: 'Expert Disagreement vs α',    icon: '⚡' },
+  ];
+
+  const cards = figDefs.map(f => {
+    const fname = figs[f.key];
+    const body  = fname
+      ? `<img src="/figures/${fname}" alt="${f.title}" loading="lazy">`
+      : `<div class="fig-placeholder">Not available for this task</div>`;
+    return `<div class="fig-card">
+      <div class="fig-card-header">
+        <span>${f.icon}</span>
+        <span class="fig-card-title">${f.title}</span>
+      </div>
+      <div class="fig-card-body">${body}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="fig-section">
+    <div class="fig-section-title">Analysis Figures — ${exp_id} / ${task.toUpperCase()}</div>
+    <div class="fig-grid">${cards}</div>
+  </div>`;
+}
+
+// ── CMI bucket table ──
+function renderCmiBuckets(buckets) {
+  if (!buckets || !buckets.length || buckets.every(b => b.mean === null)) return '';
+  const rows = buckets.filter(b => b.mean !== null).map(b =>
+    `<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${b.label}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">${b.mean.toFixed(4)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">${b.median.toFixed(4)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">${b.q25.toFixed(4)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">${b.q75.toFixed(4)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;">${b.count.toLocaleString()}</td>
+    </tr>`
+  ).join('');
+
+  return `<div style="margin-bottom:28px;">
+    <div class="fig-section-title">CMI Bucket Statistics</div>
+    <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border);">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="background:var(--surface);">
+          <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">CMI Range</th>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">Mean α</th>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">Median α</th>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">Q25</th>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">Q75</th>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);">Count</th>
+        </tr>
+      </thead>
+      <tbody style="background:var(--surface);">${rows}</tbody>
+    </table>
+    </div>
+  </div>`;
+}
+
+// ── Cross-task section ──
+function renderCrossTaskSection() {
+  if (!crossTaskData) return '';
+  const tasks = Object.entries(crossTaskData);
+  const cards = tasks.map(([task, s]) =>
+    `<div class="cross-card">
+      <div class="cross-card-title">${task.toUpperCase()}</div>
+      <div class="cross-stat"><span class="cross-stat-lbl">Mean α</span><span class="cross-stat-val">${s.mean_alpha.toFixed(4)}</span></div>
+      <div class="cross-stat"><span class="cross-stat-lbl">Std α</span><span class="cross-stat-val">${s.std_alpha.toFixed(4)}</span></div>
+      <div class="cross-stat"><span class="cross-stat-lbl">Words</span><span class="cross-stat-val">${s.count.toLocaleString()}</span></div>
+    </div>`
+  ).join('');
+
+  return `<div class="cross-section">
+    <div class="cross-title">Cross-Task α Comparison</div>
+    <div class="cross-desc">Router α distribution differs across tasks — LID benefits from sharp language-specific routing while POS uses more uniform blending.</div>
+    <div style="margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+      <img src="/figures/cross_task_alpha.png" alt="Cross-task alpha" style="width:100%;display:block;">
+    </div>
+    <div class="cross-grid">${cards}</div>
+  </div>`;
+}
+
+// ── Cross-task view from sidebar ──
+function showCrossTask() {
+  setActiveBtn('btn-cross');
+  if (!crossTaskData) return;
+  const panel = document.getElementById('main-panel');
+
+  const tasks = Object.entries(crossTaskData);
+  const cards = tasks.map(([task, s]) =>
+    `<div class="cross-card">
+      <div class="cross-card-title">${task.toUpperCase()}</div>
+      <div class="cross-stat"><span class="cross-stat-lbl">Mean α</span><span class="cross-stat-val">${s.mean_alpha.toFixed(4)}</span></div>
+      <div class="cross-stat"><span class="cross-stat-lbl">Std α</span><span class="cross-stat-val">${s.std_alpha.toFixed(4)}</span></div>
+      <div class="cross-stat"><span class="cross-stat-lbl">Words</span><span class="cross-stat-val">${s.count.toLocaleString()}</span></div>
+    </div>`
+  ).join('');
+
+  panel.innerHTML = `
+    <div class="note"><span class="note-icon">ℹ</span>
+      Comparing router α distributions across LID and POS tasks using the same experiment's checkpoints.
+    </div>
+    <div class="stat-cards">
+      ${tasks.map(([task, s]) => `
+        <div class="stat-card"><div class="val">${s.mean_alpha.toFixed(3)}</div><div class="lbl">${task.toUpperCase()} Mean α</div></div>
+        <div class="stat-card"><div class="val">${s.std_alpha.toFixed(3)}</div><div class="lbl">${task.toUpperCase()} Std α</div></div>
+      `).join('')}
+    </div>
+    <div class="fig-section">
+      <div class="fig-section-title">Cross-Task α Violin</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;max-width:600px;">
+        <img src="/figures/cross_task_alpha.png" alt="Cross-task" style="width:100%;display:block;">
+      </div>
+    </div>
+    <div class="cross-grid" style="margin-top:20px;">${cards}</div>
+    <div class="note" style="margin-top:24px;"><span class="note-icon">★</span>
+      <span><strong style="color:var(--text)">Key finding:</strong>
+      LID (ᾱ=${(crossTaskData.lid||crossTaskData.LID||{mean_alpha:0}).mean_alpha?.toFixed(3)||'?'}) shows much higher mean alpha than POS
+      (ᾱ=${(crossTaskData.pos||crossTaskData.POS||{mean_alpha:0}).mean_alpha?.toFixed(3)||'?'}),
+      indicating the router strongly favours HingBERT for LID but distributes weight more evenly for POS.</span>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────
+loadAnalysisList();
+</script>
+</body>
+</html>

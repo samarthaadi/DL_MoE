@@ -1,0 +1,125 @@
+{
+  "exp_id": "R1",
+  "task": "pos",
+  "generated_at": "2026-04-19T12:14:25.740296Z",
+  "num_records": 6669,
+  "mean_alpha": 0.85391,
+  "std_alpha": 0.30807,
+  "alpha_by_label": {
+    "ADJ": {
+      "mean": 0.4287,
+      "std": 0.38565,
+      "count": 356
+    },
+    "ADP": {
+      "mean": 0.96978,
+      "std": 0.11477,
+      "count": 625
+    },
+    "ADV": {
+      "mean": 0.72807,
+      "std": 0.31731,
+      "count": 213
+    },
+    "CONJ": {
+      "mean": 0.91625,
+      "std": 0.19251,
+      "count": 166
+    },
+    "DET": {
+      "mean": 0.38062,
+      "std": 0.38407,
+      "count": 231
+    },
+    "NOUN": {
+      "mean": 0.94973,
+      "std": 0.14545,
+      "count": 1059
+    },
+    "NUM": {
+      "mean": 0.35959,
+      "std": 0.34514,
+      "count": 94
+    },
+    "PART": {
+      "mean": 0.9302,
+      "std": 0.18305,
+      "count": 264
+    },
+    "PART_NEG": {
+      "mean": 0.88428,
+      "std": 0.22128,
+      "count": 101
+    },
+    "PRON": {
+      "mean": 0.11866,
+      "std": 0.26232,
+      "count": 293
+    },
+    "PRON_WH": {
+      "mean": 0.17304,
+      "std": 0.25475,
+      "count": 84
+    },
+    "PROPN": {
+      "mean": 0.95798,
+      "std": 0.1284,
+      "count": 529
+    },
+    "VERB": {
+      "mean": 0.96864,
+      "std": 0.11442,
+      "count": 1197
+    },
+    "X": {
+      "mean": 0.99584,
+      "std": 0.03375,
+      "count": 1457
+    }
+  },
+  "l2_correlation": -0.10766,
+  "switch_trajectory": {
+    "-3": {
+      "mean": null,
+      "sem": null,
+      "count": 0
+    },
+    "-2": {
+      "mean": null,
+      "sem": null,
+      "count": 0
+    },
+    "-1": {
+      "mean": null,
+      "sem": null,
+      "count": 0
+    },
+    "0": {
+      "mean": null,
+      "sem": null,
+      "count": 0
+    },
+    "1": {
+      "mean": null,
+      "sem": null,
+      "count": 0
+    },
+    "2": {
+      "mean": null,
+      "sem": null,
+      "count": 0
+    },
+    "3": {
+      "mean": null,
+      "sem": null,
+      "count": 0
+    }
+  },
+  "cmi_buckets": [],
+  "figures": {
+    "alpha_by_lang": "R1_pos_alpha_by_lang.png",
+    "switch_points": "R1_pos_switch_points.png",
+    "cmi_buckets": "R1_pos_cmi_buckets.png",
+    "disagreement": "R1_pos_disagreement.png"
+  }
+}

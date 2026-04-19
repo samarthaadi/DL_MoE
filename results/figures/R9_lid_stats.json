@@ -1,0 +1,111 @@
+{
+  "exp_id": "R9",
+  "task": "lid",
+  "generated_at": "2026-04-19T12:18:55.905085Z",
+  "num_records": 18437,
+  "mean_alpha": 0.60935,
+  "std_alpha": 0.39328,
+  "alpha_by_label": {
+    "en": {
+      "mean": 0.21078,
+      "std": 0.21139,
+      "count": 4184
+    },
+    "hi": {
+      "mean": 0.91652,
+      "std": 0.1374,
+      "count": 9950
+    },
+    "ot": {
+      "mean": 0.28662,
+      "std": 0.31431,
+      "count": 4303
+    }
+  },
+  "l2_correlation": -0.26168,
+  "switch_trajectory": {
+    "-3": {
+      "mean": 0.63593,
+      "sem": 0.0069,
+      "count": 3170
+    },
+    "-2": {
+      "mean": 0.6166,
+      "sem": 0.00684,
+      "count": 3355
+    },
+    "-1": {
+      "mean": 0.53642,
+      "sem": 0.00672,
+      "count": 3486
+    },
+    "0": {
+      "mean": 0.57369,
+      "sem": 0.00678,
+      "count": 3486
+    },
+    "1": {
+      "mean": 0.67015,
+      "sem": 0.0066,
+      "count": 3465
+    },
+    "2": {
+      "mean": 0.65982,
+      "sem": 0.00674,
+      "count": 3383
+    },
+    "3": {
+      "mean": 0.64181,
+      "sem": 0.00698,
+      "count": 3235
+    }
+  },
+  "cmi_buckets": [
+    {
+      "label": "0.00\u20130.10",
+      "mean": null,
+      "median": null,
+      "q25": null,
+      "q75": null,
+      "count": 0
+    },
+    {
+      "label": "0.10\u20130.20",
+      "mean": 0.67542,
+      "median": 0.91476,
+      "q25": 0.22033,
+      "q75": 0.98068,
+      "count": 4372
+    },
+    {
+      "label": "0.20\u20130.30",
+      "mean": 0.64177,
+      "median": 0.89,
+      "q25": 0.16784,
+      "q75": 0.98032,
+      "count": 6789
+    },
+    {
+      "label": "0.30\u20130.40",
+      "mean": 0.55602,
+      "median": 0.62562,
+      "q25": 0.12952,
+      "q75": 0.96703,
+      "count": 4795
+    },
+    {
+      "label": "0.40\u20130.50",
+      "mean": 0.50727,
+      "median": 0.37427,
+      "q25": 0.12917,
+      "q75": 0.95991,
+      "count": 2481
+    }
+  ],
+  "figures": {
+    "alpha_by_lang": "R9_lid_alpha_by_lang.png",
+    "switch_points": "R9_lid_switch_points.png",
+    "cmi_buckets": "R9_lid_cmi_buckets.png",
+    "disagreement": "R9_lid_disagreement.png"
+  }
+}

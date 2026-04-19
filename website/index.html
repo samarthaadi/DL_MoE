@@ -312,6 +312,11 @@
 <header>
   <h1>Hinglish MoE Analyzer</h1>
   <p>Analyze Hindi-English code-mixed text using a Frozen Mixture-of-Experts model</p>
+  <div style="margin-top:12px;display:flex;gap:12px;">
+    <a href="index.html" style="font-size:13px;color:rgba(255,255,255,0.9);text-decoration:none;padding:4px 12px;border:1px solid rgba(255,255,255,0.3);border-radius:6px;background:rgba(255,255,255,0.1);">Analyzer</a>
+    <a href="results.html" style="font-size:13px;color:rgba(255,255,255,0.6);text-decoration:none;padding:4px 12px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;">Results</a>
+    <a href="analysis.html" style="font-size:13px;color:rgba(255,255,255,0.6);text-decoration:none;padding:4px 12px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;">Analysis</a>
+  </div>
 </header>
 
 <!-- Input card -->
@@ -325,7 +330,6 @@
       <select id="taskSelect">
         <option value="lid">LID — Language Identification (Hindi / English / Other)</option>
         <option value="pos">POS — Part-of-Speech Tagging</option>
-        <option value="ner">NER — Named Entity Recognition</option>
       </select>
     </div>
     <button id="analyzeBtn" onclick="analyze()">Analyze</button>

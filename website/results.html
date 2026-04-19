@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DL_MoE — Experiment Results</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --accent: #58a6ff; --green: #3fb950; --yellow: #d29922;
+    --red: #f85149; --purple: #bc8cff; --orange: #ffa657; --teal: #39d353;
+    --best: rgba(63,185,80,0.15); --best-border: #3fb950;
+    --badge-moe: rgba(88,166,255,0.15); --badge-base: rgba(188,140,255,0.15);
+    --badge-abl: rgba(255,166,87,0.15); --badge-arch: rgba(57,211,83,0.15);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; line-height:1.6; }
+
+  header { background:linear-gradient(135deg,#1a2332 0%,#0d1117 60%,#1a1a2e 100%);
+    border-bottom:1px solid var(--border); padding:48px 40px 36px; position:relative; overflow:hidden; }
+  header::before { content:''; position:absolute; top:-60px; right:-60px; width:300px; height:300px;
+    background:radial-gradient(circle,rgba(88,166,255,0.08) 0%,transparent 70%); border-radius:50%; }
+  header::after { content:''; position:absolute; bottom:-80px; left:20%; width:400px; height:400px;
+    background:radial-gradient(circle,rgba(188,140,255,0.05) 0%,transparent 70%); border-radius:50%; }
+  .header-inner { max-width:1340px; margin:0 auto; position:relative; z-index:1; }
+  .eyebrow { font-size:12px; font-weight:600; letter-spacing:2px; color:var(--accent);
+    text-transform:uppercase; margin-bottom:12px; }
+  h1 { font-size:clamp(26px,4vw,42px); font-weight:700; color:var(--text); margin-bottom:10px; }
+  h1 span { background:linear-gradient(90deg,#58a6ff,#bc8cff); -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent; background-clip:text; }
+  .subtitle { color:var(--muted); font-size:15px; max-width:700px; margin-bottom:28px; }
+
+  .stat-row { display:flex; gap:20px; flex-wrap:wrap; }
+  .stat { background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:10px;
+    padding:14px 22px; }
+  .stat-val { font-size:22px; font-weight:700; color:var(--accent); font-family:'JetBrains Mono',monospace; }
+  .stat-lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+
+  main { max-width:1340px; margin:0 auto; padding:40px 40px 80px; }
+
+  .section { margin-bottom:52px; }
+  .section-title { font-size:13px; font-weight:600; letter-spacing:2px; text-transform:uppercase;
+    color:var(--muted); margin-bottom:6px; padding-left:2px; }
+  .section-heading { font-size:22px; font-weight:700; color:var(--text); margin-bottom:6px; }
+  .section-desc { font-size:14px; color:var(--muted); margin-bottom:22px; }
+  .section-desc code { font-family:'JetBrains Mono',monospace; background:var(--surface2);
+    padding:2px 6px; border-radius:4px; font-size:13px; }
+
+  .table-wrap { overflow-x:auto; border-radius:12px; border:1px solid var(--border);
+    box-shadow:0 4px 24px rgba(0,0,0,0.4); }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  thead th { background:var(--surface); padding:14px 18px; text-align:left; font-size:11px;
+    font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted);
+    border-bottom:1px solid var(--border); white-space:nowrap; position:sticky; top:0; }
+  tbody tr { background:var(--surface); transition:background 0.15s; }
+  tbody tr:nth-child(even) { background:var(--surface2); }
+  tbody tr:hover { background:rgba(88,166,255,0.06); }
+  tbody td { padding:13px 18px; border-bottom:1px solid rgba(48,54,61,0.5); vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  .tr-best td { background:var(--best) !important; }
+  .tr-best td:first-child { border-left:3px solid var(--best-border); padding-left:15px; }
+  .tr-ref td { background:rgba(88,166,255,0.05) !important; }
+  .tr-ref td:first-child { border-left:3px solid var(--accent); padding-left:15px; }
+
+  .id-cell { font-family:'JetBrains Mono',monospace; font-weight:600; font-size:13px; color:var(--accent); }
+  .metric-cell { font-family:'JetBrains Mono',monospace; font-weight:500; }
+  .metric-cell.top { color:var(--green); font-weight:700; }
+  .metric-cell.hi { color:var(--teal); }
+  .na { color:var(--muted); font-size:12px; }
+
+  .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px;
+    font-size:11px; font-weight:600; letter-spacing:0.5px; }
+  .badge-moe  { background:var(--badge-moe);  color:var(--accent);  border:1px solid rgba(88,166,255,0.3); }
+  .badge-base { background:var(--badge-base); color:var(--purple);  border:1px solid rgba(188,140,255,0.3); }
+  .badge-abl  { background:var(--badge-abl);  color:var(--orange);  border:1px solid rgba(255,166,87,0.3); }
+  .badge-arch { background:var(--badge-arch); color:var(--teal);    border:1px solid rgba(57,211,83,0.3); }
+  .badge-gru  { background:rgba(210,153,34,0.12); color:var(--yellow); border:1px solid rgba(210,153,34,0.3); }
+  .badge-cnn  { background:rgba(248,81,73,0.12);  color:var(--red);    border:1px solid rgba(248,81,73,0.3); }
+
+  .seed-pills { display:flex; gap:6px; flex-wrap:wrap; }
+  .pill { font-family:'JetBrains Mono',monospace; font-size:12px; background:var(--surface2);
+    border:1px solid var(--border); border-radius:6px; padding:2px 8px; color:var(--muted); }
+
+  .tau-badge { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--yellow);
+    background:rgba(210,153,34,0.1); border:1px solid rgba(210,153,34,0.3); border-radius:5px;
+    padding:2px 7px; display:inline-block; }
+
+  .delta { font-size:11px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+  .delta.pos { color:var(--green); }
+  .delta.neg { color:var(--red); }
+
+  .legend { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:22px; }
+  .legend-item { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--muted); }
+  .legend-dot { width:10px; height:10px; border-radius:50%; }
+  .dot-moe  { background:var(--accent); }
+  .dot-base { background:var(--purple); }
+  .dot-abl  { background:var(--orange); }
+  .dot-arch { background:var(--teal); }
+  .dot-best { background:var(--green); }
+  .dot-ref  { background:var(--accent); opacity:0.5; }
+
+  .note { display:flex; align-items:flex-start; gap:10px; background:rgba(88,166,255,0.06);
+    border:1px solid rgba(88,166,255,0.2); border-radius:8px; padding:12px 16px;
+    font-size:13px; color:var(--muted); margin-bottom:22px; }
+  .note.warn { background:rgba(210,153,34,0.07); border-color:rgba(210,153,34,0.25); }
+  .note-icon { font-size:16px; flex-shrink:0; margin-top:1px; color:var(--accent); }
+  .note.warn .note-icon { color:var(--yellow); }
+
+  .divider { height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent);
+    margin:40px 0; }
+
+  /* Summary table — compact two-metric layout */
+  .summary-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:0; }
+  @media(max-width:960px){ .summary-grid { grid-template-columns:1fr; } }
+
+  footer { text-align:center; padding:24px; color:var(--muted); font-size:12px;
+    border-top:1px solid var(--border); }
+
+  @media(max-width:768px) {
+    header,main { padding-left:20px; padding-right:20px; }
+    h1 { font-size:24px; }
+    .stat-row { gap:12px; }
+    thead th, tbody td { padding:10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="eyebrow">Experiment Results Dashboard</div>
+    <h1>DL_MoE — <span>Frozen-Expert Mixture of Experts</span></h1>
+    <p class="subtitle">Hindi-English code-mixed sequence labelling using a frozen dual-expert MoE (HingBERT + RoBERTa) with a learned token-level router. Results across LID and POS tasks with three router architectures: MLP, GRU, and CNN.</p>
+    <div class="stat-row">
+      <div class="stat"><div class="stat-val">65</div><div class="stat-lbl">Metric Files</div></div>
+      <div class="stat"><div class="stat-val">17</div><div class="stat-lbl">Experiments</div></div>
+      <div class="stat"><div class="stat-val">3</div><div class="stat-lbl">Router Types</div></div>
+      <div class="stat"><div class="stat-val">89.7%</div><div class="stat-lbl">Best LID F1</div></div>
+      <div class="stat"><div class="stat-val">91.2%</div><div class="stat-lbl">Best POS Acc</div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ─── BASELINES ─────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-title">Section 1</div>
+  <div class="section-heading">Baseline Models</div>
+  <div class="section-desc">Single-expert baselines: fine-tuned and frozen variants of HingBERT and RoBERTa, plus a fixed 50/50 blend. These establish the upper and lower bounds for the MoE experiments.</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-base"></div>Baseline</div>
+    <div class="legend-item"><div class="legend-dot dot-best"></div>Best in group (highlighted row)</div>
+  </div>
+
+  <div class="note">
+    <span class="note-icon">ℹ</span>
+    B1 (fine-tuned HingBERT) is the upper-bound oracle — it is the only non-frozen model. All others use frozen experts + lightweight head only.
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Type</th><th>Model</th><th>Frozen?</th>
+        <th>LID F1 s42</th><th>LID F1 s123</th><th>LID avg ± std</th>
+        <th>POS Acc s42</th><th>POS Acc s123</th><th>POS avg ± std</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="tr-best">
+        <td class="id-cell">B1</td>
+        <td><span class="badge badge-base">Baseline</span></td>
+        <td>HingBERT (fine-tuned)</td><td>❌ No</td>
+        <td class="metric-cell top">0.8942</td><td class="metric-cell top">0.8987</td><td class="metric-cell top">0.8965 ± 0.0023</td>
+        <td class="metric-cell top">0.9120</td><td class="metric-cell top">0.9110</td><td class="metric-cell top">0.9109 ± 0.0011</td>
+      </tr>
+      <tr>
+        <td class="id-cell">B2</td>
+        <td><span class="badge badge-base">Baseline</span></td>
+        <td>HingBERT (frozen)</td><td>✅ Yes</td>
+        <td class="metric-cell">0.8061</td><td class="metric-cell">0.8050</td><td class="metric-cell">0.8055 ± 0.0006</td>
+        <td class="metric-cell">0.6548</td><td class="metric-cell">0.6499</td><td class="metric-cell">0.6523 ± 0.0025</td>
+      </tr>
+      <tr>
+        <td class="id-cell">B3</td>
+        <td><span class="badge badge-base">Baseline</span></td>
+        <td>RoBERTa (frozen)</td><td>✅ Yes</td>
+        <td class="metric-cell">0.8147</td><td class="metric-cell">0.8149</td><td class="metric-cell">0.8148 ± 0.0001</td>
+        <td class="metric-cell">0.6287</td><td class="metric-cell">0.6349</td><td class="metric-cell">0.6318 ± 0.0031</td>
+      </tr>
+      <tr>
+        <td class="id-cell">B4</td>
+        <td><span class="badge badge-base">Baseline</span></td>
+        <td>Fixed 50/50 Avg</td><td>✅ Yes</td>
+        <td class="metric-cell">0.8072</td><td class="metric-cell">0.8009</td><td class="metric-cell">0.8041 ± 0.0031</td>
+        <td class="metric-cell">0.6122</td><td class="metric-cell">0.6098</td><td class="metric-cell">0.6110 ± 0.0012</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── MoE ROUTER VARIANTS ───────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-title">Section 2</div>
+  <div class="section-heading">MoE Router Variants — Temperature &amp; Routing Mode (MLP)</div>
+  <div class="section-desc">All use frozen HingBERT + RoBERTa with an MLP router. Router input = <code>both</code> (hidden states concatenated, dim 1536) unless noted. R1 is the base MoE configuration.</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-moe"></div>MoE MLP router</div>
+    <div class="legend-item"><div class="legend-dot dot-ref" style="border:2px solid var(--accent);border-radius:50%;"></div>Reference row (R1)</div>
+    <div class="legend-item"><div class="legend-dot dot-best"></div>Best overall (highlighted)</div>
+  </div>
+
+  <div class="note warn">
+    <span class="note-icon">⚠</span>
+    R1 and R5 show high cross-seed variance (std ≈ 0.032) on LID, suggesting sensitivity to initialisation at τ=1.0 and τ=2.0. R2–R4 (sharper τ) are significantly more stable.
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>τ</th><th>Routing Mode</th>
+        <th>LID F1 s42</th><th>LID F1 s123</th><th>LID avg ± std</th>
+        <th>POS Acc s42</th><th>POS Acc s123</th><th>POS avg ± std</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="tr-ref">
+        <td class="id-cell">R1</td>
+        <td><span class="tau-badge">1.0</span></td>
+        <td>Soft, token-level (reference)</td>
+        <td class="metric-cell">0.8758</td><td class="metric-cell">0.8117</td><td class="metric-cell">0.8437 ± 0.0321</td>
+        <td class="metric-cell">0.6626</td><td class="metric-cell">0.6926</td><td class="metric-cell">0.6776 ± 0.0150</td>
+      </tr>
+      <tr class="tr-best">
+        <td class="id-cell">R2</td>
+        <td><span class="tau-badge">0.1</span></td>
+        <td>Soft, token-level (near-hard)</td>
+        <td class="metric-cell top">0.8963</td><td class="metric-cell top">0.8833</td><td class="metric-cell top">0.8898 ± 0.0065</td>
+        <td class="metric-cell">0.6545</td><td class="metric-cell hi">0.6853</td><td class="metric-cell hi">0.6699 ± 0.0154</td>
+      </tr>
+      <tr>
+        <td class="id-cell">R3</td>
+        <td><span class="tau-badge">0.3</span></td>
+        <td>Soft, token-level (sharper)</td>
+        <td class="metric-cell">0.8915</td><td class="metric-cell">0.8858</td><td class="metric-cell">0.8886 ± 0.0029</td>
+        <td class="metric-cell">0.6574</td><td class="metric-cell">0.6824</td><td class="metric-cell">0.6699 ± 0.0125</td>
+      </tr>
+      <tr>
+        <td class="id-cell">R4</td>
+        <td><span class="tau-badge">0.5</span></td>
+        <td>Soft, token-level (intermediate)</td>
+        <td class="metric-cell">0.8854</td><td class="metric-cell">0.8832</td><td class="metric-cell">0.8843 ± 0.0011</td>
+        <td class="metric-cell">0.6595</td><td class="metric-cell">0.6788</td><td class="metric-cell">0.6691 ± 0.0097</td>
+      </tr>
+      <tr>
+        <td class="id-cell">R5</td>
+        <td><span class="tau-badge">2.0</span></td>
+        <td>Soft, token-level (near-uniform)</td>
+        <td class="metric-cell">0.8764</td><td class="metric-cell">0.8116</td><td class="metric-cell">0.8440 ± 0.0324</td>
+        <td class="metric-cell">0.6650</td><td class="metric-cell">0.6707</td><td class="metric-cell">0.6679 ± 0.0028</td>
+      </tr>
+      <tr>
+        <td class="id-cell">R6</td>
+        <td><span class="tau-badge">1.0</span></td>
+        <td>Soft, <em>sentence-level</em> (CLS)</td>
+        <td class="metric-cell">0.8124</td><td class="metric-cell">0.8116</td><td class="metric-cell">0.8120 ± 0.0004</td>
+        <td class="metric-cell">0.6626</td><td class="metric-cell">0.6662</td><td class="metric-cell">0.6644 ± 0.0018</td>
+      </tr>
+      <tr>
+        <td class="id-cell">R7</td>
+        <td><span class="tau-badge">1.0</span></td>
+        <td>Hard routing (straight-through)</td>
+        <td class="metric-cell">0.8748</td><td class="metric-cell">0.8768</td><td class="metric-cell">0.8758 ± 0.0010</td>
+        <td class="metric-cell">0.6497</td><td class="metric-cell">0.6542</td><td class="metric-cell">0.6520 ± 0.0022</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── ROUTER ARCHITECTURE ───────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-title">Section 3 — New</div>
+  <div class="section-heading">Router Architecture Variants — MLP vs GRU vs CNN</div>
+  <div class="section-desc">
+    R8 replaces the per-token MLP with a <strong>BiGRU</strong> that sees the full word sequence, enabling left-right context in routing decisions.
+    R9 uses a <strong>1D CNN</strong> (kernel=5, ±2-word window) capturing local neighbourhood context.
+    All three share τ=1.0 and soft token-level routing with both expert hidden states as input.
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-moe"></div>MLP router (reference)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow);"></div>GRU router (R8)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div>CNN router (R9)</div>
+    <div class="legend-item"><div class="legend-dot dot-best"></div>Best in group</div>
+  </div>
+
+  <div class="note">
+    <span class="note-icon">ℹ</span>
+    R1 (MLP, τ=1.0) is shown as the architecture baseline. The delta columns compare each architecture against R1's average score. For LID, the CNN router (R9) outperforms both MLP and GRU with far lower variance.
+  </div>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Architecture</th><th>Context</th><th>τ</th>
+        <th>LID F1 s42</th><th>LID F1 s123</th><th>LID avg ± std</th><th>vs R1 LID</th>
+        <th>POS Acc s42</th><th>POS Acc s123</th><th>POS avg ± std</th><th>vs R1 POS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="tr-ref">
+        <td class="id-cell">R1</td>
+        <td><span class="badge badge-moe">MLP</span></td>
+        <td>Per-token (no context)</td>
+        <td><span class="tau-badge">1.0</span></td>
+        <td class="metric-cell">0.8758</td><td class="metric-cell">0.8117</td>
+        <td class="metric-cell">0.8437 ± 0.0321</td><td class="na">— ref</td>
+        <td class="metric-cell">0.6626</td><td class="metric-cell">0.6926</td>
+        <td class="metric-cell">0.6776 ± 0.0150</td><td class="na">— ref</td>
+      </tr>
+      <tr>
+        <td class="id-cell">R8</td>
+        <td><span class="badge badge-gru">BiGRU</span></td>
+        <td>Full sequence (bidirectional)</td>
+        <td><span class="tau-badge">1.0</span></td>
+        <td class="metric-cell">0.8598</td><td class="metric-cell">0.8724</td>
+        <td class="metric-cell">0.8661 ± 0.0063</td>
+        <td class="delta pos">+2.24%</td>
+        <td class="metric-cell">0.6640</td><td class="metric-cell">0.6205</td>
+        <td class="metric-cell">0.6422 ± 0.0217</td>
+        <td class="delta neg">−3.54%</td>
+      </tr>
+      <tr class="tr-best">
+        <td class="id-cell">R9</td>
+        <td><span class="badge badge-cnn">CNN k=5</span></td>
+        <td>±2-word window</td>
+        <td><span class="tau-badge">1.0</span></td>
+        <td class="metric-cell hi">0.8817</td><td class="metric-cell top">0.8841</td>
+        <td class="metric-cell top">0.8829 ± 0.0012</td>
+        <td class="delta pos">+3.92%</td>
+        <td class="metric-cell">0.6677</td><td class="metric-cell hi">0.6679</td>
+        <td class="metric-cell hi">0.6678 ± 0.0001</td>
+        <td class="delta neg">−0.98%</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note" style="margin-top:18px;">
+    <span class="note-icon">★</span>
+    <span><strong>Key finding:</strong> R9 (CNN) achieves +3.92% LID over R1-MLP with near-zero variance (±0.0012 vs ±0.0321), making it the most stable MoE architecture. R8 (GRU) improves LID mean but shows high POS variance (±0.0217), suggesting the BiGRU struggles with the shorter POS sequences. For POS, the MoE gap vs B1 (∼24 pp) remains regardless of router architecture.</span>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── ABLATIONS ─────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-title">Section 4</div>
+  <div class="section-heading">Router Input Ablations</div>
+  <div class="section-desc">How does restricting the router's input signal affect performance? A1 ≡ R1 (both expert hidden states). A2 feeds only HingBERT's representation; A3 only RoBERTa's.</div>
+
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th><th>Router Input</th><th>τ</th>
+        <th>LID F1 s42</th><th>LID F1 s123</th><th>LID avg ± std</th>
+        <th>POS Acc s42</th><th>POS Acc s123</th><th>POS avg ± std</th>
+        <th>vs A1 LID</th><th>vs A1 POS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="tr-ref">
+        <td class="id-cell">A1 (=R1)</td>
+        <td><span class="badge badge-moe">Both (HingBERT + RoBERTa)</span></td>
+        <td><span class="tau-badge">1.0</span></td>
+        <td class="metric-cell">0.8758</td><td class="metric-cell">0.8117</td><td class="metric-cell">0.8437 ± 0.0321</td>
+        <td class="metric-cell">0.6626</td><td class="metric-cell">0.6926</td><td class="metric-cell">0.6776 ± 0.0150</td>
+        <td class="na">— ref</td><td class="na">— ref</td>
+      </tr>
+      <tr>
+        <td class="id-cell">A2</td>
+        <td><span class="badge badge-abl">HingBERT only</span></td>
+        <td><span class="tau-badge">1.0</span></td>
+        <td class="metric-cell">0.8629</td><td class="metric-cell">0.8582</td><td class="metric-cell">0.8606 ± 0.0024</td>
+        <td class="metric-cell">0.6739</td><td class="metric-cell">0.6707</td><td class="metric-cell">0.6723 ± 0.0016</td>
+        <td class="delta pos">+1.69% avg</td><td class="delta neg">−0.53% avg</td>
+      </tr>
+      <tr>
+        <td class="id-cell">A3</td>
+        <td><span class="badge badge-abl">RoBERTa only</span></td>
+        <td><span class="tau-badge">1.0</span></td>
+        <td class="metric-cell">0.8734</td><td class="metric-cell">0.8750</td><td class="metric-cell">0.8742 ± 0.0008</td>
+        <td class="metric-cell">0.6722</td><td class="metric-cell">0.6688</td><td class="metric-cell">0.6705 ± 0.0017</td>
+        <td class="delta pos">+3.05% avg</td><td class="delta neg">−0.71% avg</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="note" style="margin-top:18px;">
+    <span class="note-icon">ℹ</span>
+    Counterintuitively, A2 and A3 (restricted router input) outperform A1 on average LID. This likely reflects reduced overfitting in the router: when the router cannot see both representations simultaneously, it learns a simpler, more generalisable routing signal. A1's high variance (±0.0321) confirms it is less stable.
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─── FULL RESULTS SUMMARY ─────────────────────────────────────────── -->
+<section class="section">
+  <div class="section-title">Section 5</div>
+  <div class="section-heading">Full Results Summary — All Experiments (mean ± std across seeds)</div>
+  <div class="section-desc">Complete cross-seed aggregation from <code>aggregated.json</code>. Ranked by LID avg within each group. Best per group highlighted.</div>
+
+  <div class="summary-grid">
+
+    <!-- LID -->
+    <div>
+      <div style="font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;">LID — Weighted F1</div>
+      <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Type</th><th>Mean</th><th>± Std</th><th>Seeds</th></tr>
+        </thead>
+        <tbody>
+          <tr class="tr-best">
+            <td class="id-cell">B1</td><td><span class="badge badge-base">Base</span></td>
+            <td class="metric-cell top">0.8965</td><td class="metric-cell">0.0023</td>
+            <td><div class="seed-pills"><span class="pill">0.8942</span><span class="pill">0.8987</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R2</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell hi">0.8898</td><td class="metric-cell">0.0065</td>
+            <td><div class="seed-pills"><span class="pill">0.8963</span><span class="pill">0.8833</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R3</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.8886</td><td class="metric-cell">0.0029</td>
+            <td><div class="seed-pills"><span class="pill">0.8915</span><span class="pill">0.8858</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R4</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.8843</td><td class="metric-cell">0.0011</td>
+            <td><div class="seed-pills"><span class="pill">0.8854</span><span class="pill">0.8832</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R9</td><td><span class="badge badge-cnn">MoE CNN</span></td>
+            <td class="metric-cell">0.8829</td><td class="metric-cell" style="color:var(--green);">0.0012</td>
+            <td><div class="seed-pills"><span class="pill">0.8817</span><span class="pill">0.8841</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">A3</td><td><span class="badge badge-abl">Ablation</span></td>
+            <td class="metric-cell">0.8742</td><td class="metric-cell">0.0008</td>
+            <td><div class="seed-pills"><span class="pill">0.8734</span><span class="pill">0.8750</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R7</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.8758</td><td class="metric-cell">0.0010</td>
+            <td><div class="seed-pills"><span class="pill">0.8748</span><span class="pill">0.8768</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R8</td><td><span class="badge badge-gru">MoE GRU</span></td>
+            <td class="metric-cell">0.8661</td><td class="metric-cell">0.0063</td>
+            <td><div class="seed-pills"><span class="pill">0.8598</span><span class="pill">0.8724</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">A2</td><td><span class="badge badge-abl">Ablation</span></td>
+            <td class="metric-cell">0.8606</td><td class="metric-cell">0.0024</td>
+            <td><div class="seed-pills"><span class="pill">0.8582</span><span class="pill">0.8629</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R1 / R5</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.8437 / 0.8440</td><td class="metric-cell" style="color:var(--red);">0.0321 / 0.0324</td>
+            <td><div class="seed-pills"><span class="pill">high var</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">B3</td><td><span class="badge badge-base">Base</span></td>
+            <td class="metric-cell">0.8148</td><td class="metric-cell">0.0001</td>
+            <td><div class="seed-pills"><span class="pill">0.8147</span><span class="pill">0.8149</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R6</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.8120</td><td class="metric-cell">0.0004</td>
+            <td><div class="seed-pills"><span class="pill">0.8124</span><span class="pill">0.8116</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">B2</td><td><span class="badge badge-base">Base</span></td>
+            <td class="metric-cell">0.8055</td><td class="metric-cell">0.0006</td>
+            <td><div class="seed-pills"><span class="pill">0.8061</span><span class="pill">0.8050</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">B4</td><td><span class="badge badge-base">Base</span></td>
+            <td class="metric-cell">0.8041</td><td class="metric-cell">0.0031</td>
+            <td><div class="seed-pills"><span class="pill">0.8072</span><span class="pill">0.8009</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <!-- POS -->
+    <div>
+      <div style="font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--purple);margin-bottom:12px;">POS — Accuracy</div>
+      <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Type</th><th>Mean</th><th>± Std</th><th>Seeds</th></tr>
+        </thead>
+        <tbody>
+          <tr class="tr-best">
+            <td class="id-cell">B1</td><td><span class="badge badge-base">Base</span></td>
+            <td class="metric-cell top">0.9109</td><td class="metric-cell">0.0011</td>
+            <td><div class="seed-pills"><span class="pill">0.9120</span><span class="pill">0.9110</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R1</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell hi">0.6776</td><td class="metric-cell">0.0150</td>
+            <td><div class="seed-pills"><span class="pill">0.6626</span><span class="pill">0.6926</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">A2</td><td><span class="badge badge-abl">Ablation</span></td>
+            <td class="metric-cell">0.6723</td><td class="metric-cell">0.0016</td>
+            <td><div class="seed-pills"><span class="pill">0.6739</span><span class="pill">0.6707</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R2</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.6699</td><td class="metric-cell">0.0154</td>
+            <td><div class="seed-pills"><span class="pill">0.6545</span><span class="pill">0.6853</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R3</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.6699</td><td class="metric-cell">0.0125</td>
+            <td><div class="seed-pills"><span class="pill">0.6574</span><span class="pill">0.6824</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">A3</td><td><span class="badge badge-abl">Ablation</span></td>
+            <td class="metric-cell">0.6705</td><td class="metric-cell">0.0017</td>
+            <td><div class="seed-pills"><span class="pill">0.6722</span><span class="pill">0.6688</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R9</td><td><span class="badge badge-cnn">MoE CNN</span></td>
+            <td class="metric-cell">0.6678</td><td class="metric-cell" style="color:var(--green);">0.0001</td>
+            <td><div class="seed-pills"><span class="pill">0.6677</span><span class="pill">0.6679</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R4</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.6691</td><td class="metric-cell">0.0097</td>
+            <td><div class="seed-pills"><span class="pill">0.6595</span><span class="pill">0.6788</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R5</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.6679</td><td class="metric-cell">0.0028</td>
+            <td><div class="seed-pills"><span class="pill">0.6650</span><span class="pill">0.6707</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R6</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.6644</td><td class="metric-cell">0.0018</td>
+            <td><div class="seed-pills"><span class="pill">0.6626</span><span class="pill">0.6662</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R7</td><td><span class="badge badge-moe">MoE MLP</span></td>
+            <td class="metric-cell">0.6520</td><td class="metric-cell">0.0022</td>
+            <td><div class="seed-pills"><span class="pill">0.6497</span><span class="pill">0.6542</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">B2</td><td><span class="badge badge-base">Base</span></td>
+            <td class="metric-cell">0.6523</td><td class="metric-cell">0.0025</td>
+            <td><div class="seed-pills"><span class="pill">0.6548</span><span class="pill">0.6499</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">R8</td><td><span class="badge badge-gru">MoE GRU</span></td>
+            <td class="metric-cell">0.6422</td><td class="metric-cell" style="color:var(--red);">0.0217</td>
+            <td><div class="seed-pills"><span class="pill">0.6640</span><span class="pill">0.6205</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">B3</td><td><span class="badge badge-base">Base</span></td>
+            <td class="metric-cell">0.6318</td><td class="metric-cell">0.0031</td>
+            <td><div class="seed-pills"><span class="pill">0.6287</span><span class="pill">0.6349</span></div></td>
+          </tr>
+          <tr>
+            <td class="id-cell">B4</td><td><span class="badge badge-base">Base</span></td>
+            <td class="metric-cell">0.6110</td><td class="metric-cell">0.0012</td>
+            <td><div class="seed-pills"><span class="pill">0.6122</span><span class="pill">0.6098</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+  </div><!-- .summary-grid -->
+</section>
+
+</main>
+
+<footer>
+  Generated from <code>results/metrics/</code> — DL_MoE &nbsp;·&nbsp; Frozen-Expert MoE for Code-Mixed NLP &nbsp;·&nbsp;
+  17 experiments &nbsp;·&nbsp; 3 router architectures (MLP, GRU, CNN)
+</footer>
+
+</body>
+</html>
