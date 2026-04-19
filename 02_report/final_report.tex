@@ -18,28 +18,28 @@
 \title{Frozen-Expert Mixture of Experts for\\Hindi-English Code-Mixed Sequence Labelling}
 
 \author{
-\IEEEauthorblockN{[Author Names]}
-\IEEEauthorblockA{\textit{Department of Computer Science and Information Systems}\\
-\textit{BITS Pilani, Pilani Campus}\\
-Pilani, Rajasthan, India \\
-\{[email IDs]\}@pilani.bits-pilani.ac.in}
-}
+\IEEEauthorblockN{[Priyanshu Narayan, Samarth Agrawal, Satyasheel Singh, Vaishnav Vaijnath Pasarge]}
+\IEEEauthorblockA{\textit{Deep Learning Project}\\
+\textit{CS F425}\\
+BITS Pilani \\
+\{f20230283; f20230761; f20230261; f20230631\} :@pilani.bits-pilani.ac.in}}
+
 
 \maketitle
 
 \begin{abstract}
-Hindi-English code-mixing is pervasive in Indian social media, where speakers fluidly alternate between the two languages within a single utterance. Standard monolingual models struggle with this mixed register. We present a \textbf{Frozen-Expert Mixture of Experts (FE-MoE)} framework that blends two independently pre-trained, completely frozen language models---HingBERT (Hindi-English specialist) and RoBERTa-base (English generalist)---via a lightweight learned router, training only $\sim$200K parameters. We systematically evaluate three router architectures (MLP, BiGRU, CNN) and four ablation axes (temperature, routing mode, granularity, input) across Language Identification (LID) and Part-of-Speech (POS) tagging. The best MoE variant (MLP, $\tau{=}0.1$) achieves 88.98\% weighted F1 on LID, within 0.67 points of a fully fine-tuned HingBERT (89.65\%) while using only 0.24\% as many trainable parameters. We also contribute interpretability analyses revealing that the router learns linguistically meaningful routing: Hindi tokens receive significantly higher HingBERT weight ($\alpha$) than English tokens.
+Hindi-English code-mixing is pervasive in Indian social media, where speakers fluidly alternate between the two languages within a single utterance. Standard monolingual models struggle with this mixed register. We present a \textbf{Frozen-Expert Mixture of Experts (FE-MoE)} framework that blends two independently pre-trained, completely frozen language models-HingBERT (Hindi-English specialist) and RoBERTa-base (English generalist)-via a lightweight learned router, training only $\sim$200K parameters. We systematically evaluate three router architectures (MLP, BiGRU, CNN) and four ablation axes (temperature, routing mode, granularity, input) across Language Identification (LID) and Part-of-Speech (POS) tagging. The best MoE variant (MLP, $\tau{=}0.1$) achieves 88.98\% weighted F1 on LID, within 0.67 points of a fully fine-tuned HingBERT (89.65\%) while using only 0.24\% as many trainable parameters. We also contribute interpretability analyses revealing that the router learns linguistically meaningful routing: Hindi tokens receive significantly higher HingBERT weight ($\alpha$) than English tokens.
 \end{abstract}
 
 \begin{IEEEkeywords}
 code-mixing, mixture of experts, language identification, part-of-speech tagging, Hindi-English, frozen experts, soft routing
 \end{IEEEkeywords}
 
-% -----------------------------------------------------------------------
+% -------------------------
 \section{Introduction}
-% -----------------------------------------------------------------------
+% -------------------------
 
-Hindi-English code-mixing---the practice of alternating between Hindi and English within a single sentence---is ubiquitous in Indian social media, messaging, and informal writing. Computational models for such text face a fundamental challenge: no single pre-trained language model captures both the Hindi morphology and syntax \emph{and} the English semantics equally well.
+Hindi-English code-mixing-the practice of alternating between Hindi and English within a single sentence-is ubiquitous in Indian social media, messaging, and informal writing. Computational models for such text face a fundamental challenge: no single pre-trained language model captures both the Hindi morphology and syntax \emph{and} the English semantics equally well.
 
 Prior work has addressed this through code-mixed pre-training \cite{nayak2022hingbert}, multilingual models, and task-specific fine-tuning. However, fine-tuning large models is compute-intensive ($\sim$85M parameters for BERT-scale models), and models fine-tuned on one task tend to forget representations useful for others.
 
@@ -53,13 +53,13 @@ Our contributions are:
     \item Demonstration that 200K trainable parameters match a 85M-parameter fine-tuned model on LID.
 \end{enumerate}
 
-% -----------------------------------------------------------------------
+% -------------------------
 \section{Related Work}
-% -----------------------------------------------------------------------
+% -------------------------
 
 \subsection{Mixture of Experts}
 
-The Sparsely-Gated MoE layer \cite{shazeer2017moe} introduced the foundational design of routing tokens to expert sub-networks via a learned gating function, enabling 1000$\times$ capacity scaling. A key limitation is training instability and token dropping when routing is discrete. Puigcerver et al.\ \cite{puigcerver2024softmoe} addressed this with \emph{Soft MoE}, which replaces hard assignment with a fully-differentiable weighted combination of expert outputs---the same principle underlying our soft routing formulation. MoEBERT \cite{zuo2022moebert} adapts pre-trained BERT into an MoE structure via importance-guided distillation, achieving inference speedup while preserving knowledge. Unlike MoEBERT, we do not modify the expert internals; instead we keep both experts entirely frozen and train only the routing mechanism. MoE-LPR \cite{zhou2024moelpr} upcycles a dense LLM into MoE by freezing original FFN weights and adding expert copies with a language-prior router---closest in spirit to our method, but applied to monolingual LLM expansion rather than cross-lingual code-mixing.
+The Sparsely-Gated MoE layer \cite{shazeer2017moe} introduced the foundational design of routing tokens to expert sub-networks via a learned gating function, enabling 1000$\times$ capacity scaling. A key limitation is training instability and token dropping when routing is discrete. Puigcerver et al.\ \cite{puigcerver2024softmoe} addressed this with \emph{Soft MoE}, which replaces hard assignment with a fully-differentiable weighted combination of expert outputs-the same principle underlying our soft routing formulation. MoEBERT \cite{zuo2022moebert} adapts pre-trained BERT into an MoE structure via importance-guided distillation, achieving inference speedup while preserving knowledge. Unlike MoEBERT, we do not modify the expert internals; instead we keep both experts entirely frozen and train only the routing mechanism. MoE-LPR \cite{zhou2024moelpr} upcycles a dense LLM into MoE by freezing original FFN weights and adding expert copies with a language-prior router-closest in spirit to our method, but applied to monolingual LLM expansion rather than cross-lingual code-mixing.
 
 \subsection{Code-Mixed NLP}
 
@@ -69,9 +69,9 @@ HingBERT \cite{nayak2022hingbert} is a BERT-base model pre-trained on 52.93M Hin
 
 LR-MoE \cite{wang2023lrmoe} proposes frame-wise language routing via a shared language identification network to guide MoE expert selection in code-switched speech recognition. While our setting is text rather than speech, the principle of routing based on language identity is directly related. Our router learns to route \emph{implicitly} from hidden states rather than requiring an explicit LID signal, and we show that it recovers language-level routing without supervision on $\alpha$.
 
-% -----------------------------------------------------------------------
+% -------------------------
 \section{Methodology}
-% -----------------------------------------------------------------------
+% -------------------------
 
 \subsection{Model Architecture}
 
@@ -101,13 +101,13 @@ Input dimensionality is $D=1536$ (concatenation) or $D=768$ (single-expert ablat
 
 Beyond the standard token-level soft routing described above, we explore:
 \begin{itemize}
-    \item \textbf{Hard routing} (R7): Straight-through estimator \cite{bengio2013ste}---binary gate in the forward pass, soft gradient in the backward pass.
+    \item \textbf{Hard routing} (R7): Straight-through estimator \cite{bengio2013ste}-binary gate in the forward pass, soft gradient in the backward pass.
     \item \textbf{Sentence-level routing} (R6): $\alpha$ is computed once from the CLS tokens of both experts and broadcast to all token positions.
 \end{itemize}
 
-% -----------------------------------------------------------------------
+% -------------------------
 \section{Experimental Setup}
-% -----------------------------------------------------------------------
+% -------------------------
 
 \subsection{Tasks and Datasets}
 
@@ -131,13 +131,13 @@ Devanagari-script sentences are filtered from COMI-LINGUA to retain only romaniz
 
 All models use AdamW with $\text{lr}=2\times10^{-4}$, linear warmup over 10\% of steps, gradient clipping at 1.0, batch size 32, max sequence length 128, and early stopping with patience 3 (max 20 epochs). Results are reported as mean $\pm$ std over seeds \{42, 123\}.
 
-% -----------------------------------------------------------------------
+% -------------------------
 \section{Results and Ablations}
-% -----------------------------------------------------------------------
+% -------------------------
 
 \subsection{Main Results}
 
-Table~\ref{tab:main} shows the main results. The best MoE model (R2, $\tau{=}0.1$) achieves 88.98\% LID F1, within 0.67 points of fully fine-tuned B1 (89.65\%), while training only $\sim$200K parameters versus $\sim$85M for B1---a 400$\times$ reduction. All MoE variants substantially outperform frozen single-expert baselines (B2: 80.55\%, B3: 81.48\%) and the fixed blend (B4: 80.41\%), confirming the value of learned routing.
+Table~\ref{tab:main} shows the main results. The best MoE model (R2, $\tau{=}0.1$) achieves 88.98\% LID F1, within 0.67 points of fully fine-tuned B1 (89.65\%), while training only $\sim$200K parameters versus $\sim$85M for B1-a 400$\times$ reduction. All MoE variants substantially outperform frozen single-expert baselines (B2: 80.55\%, B3: 81.48\%) and the fixed blend (B4: 80.41\%), confirming the value of learned routing.
 
 For POS, MoE models achieve $\sim$67\% accuracy compared to B1's 91.09\%. Frozen expert representations lack the task-specific geometric structure needed for POS tagging, and the router cannot compensate without expert adaptation.
 
@@ -202,11 +202,11 @@ Sentence-level routing (R6: 81.20\%) performs significantly worse than token-lev
 
 \subsection{Interpretability: What Does the Router Learn?}
 
-Analysis of $\alpha$ distributions on the LID test set reveals clear language-level routing. Hindi tokens (\texttt{hi}) receive significantly higher $\alpha$ (higher HingBERT weight) than English tokens (\texttt{en}), with \texttt{ot} (Other) tokens falling between. This structure emerges without any direct supervision on $\alpha$---the router learns language-specific routing purely from the task loss. Router $\alpha$ values also correlate with expert hidden-state disagreement: tokens where $\|\mathbf{h}^{\text{hing}} - \mathbf{h}^{\text{rob}}\|_2$ is large are routed more decisively (sharper $\alpha$), while tokens both models agree on show near-uniform blending.
+Analysis of $\alpha$ distributions on the LID test set reveals clear language-level routing. Hindi tokens (\texttt{hi}) receive significantly higher $\alpha$ (higher HingBERT weight) than English tokens (\texttt{en}), with \texttt{ot} (Other) tokens falling between. This structure emerges without any direct supervision on $\alpha$-the router learns language-specific routing purely from the task loss. Router $\alpha$ values also correlate with expert hidden-state disagreement: tokens where $\|\mathbf{h}^{\text{hing}} - \mathbf{h}^{\text{rob}}\|_2$ is large are routed more decisively (sharper $\alpha$), while tokens both models agree on show near-uniform blending.
 
-% -----------------------------------------------------------------------
+% -------------------------
 \section{Failure Cases and Limitations}
-% -----------------------------------------------------------------------
+% -------------------------
 
 \textbf{POS tagging}: Frozen expert representations are not adapted for POS, resulting in $\sim$67\% accuracy versus B1's 91\%. The router cannot compensate for inadequate task-specific geometry in the frozen hidden states. Partially unfreezing the top transformer layers would likely close this gap.
 
@@ -216,13 +216,13 @@ Analysis of $\alpha$ distributions on the LID test set reveals clear language-le
 
 \textbf{Compute}: B1 checkpoints (418 MB) cannot be version-controlled in standard git repositories due to size constraints, limiting reproducibility without LFS or cloud storage.
 
-% -----------------------------------------------------------------------
+% -------------------------
 \section{Conclusion}
-% -----------------------------------------------------------------------
+% -------------------------
 
 We presented FE-MoE, a frozen dual-expert MoE framework for Hindi-English code-mixed sequence labelling. By keeping two complementary pre-trained experts frozen and training only a lightweight router, we achieve 88.98\% weighted F1 on LID (within 0.67 points of full fine-tuning) using just 200K trainable parameters. Across three router architectures and four ablation axes, we find that: (i) lower temperature sharpens routing and improves both performance and stability; (ii) CNN-based routing matches MLP at lower sequential cost; (iii) token-level granularity is essential for code-mixing; and (iv) the router learns implicit language-aware routing without explicit LID supervision. The FE-MoE framework offers a practical, parameter-efficient alternative to full fine-tuning for code-mixed NLP, and the interpretability analyses provide insight into how language specialisation emerges from task-driven training.
 
-% -----------------------------------------------------------------------
+% -------------------------
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 

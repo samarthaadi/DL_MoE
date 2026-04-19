@@ -1,19 +1,19 @@
-Team ID       : [FILL IN — e.g. 2024CS001]
+Team Name       : 
 Project Title : Frozen-Expert Mixture of Experts for Hindi-English Code-Mixed NLP
-Short Name    : DL_MoE
+Short Name    : DL Project
 Topic Number  : [FILL IN from project list]
 
 Faculty/TA Mentor : [FILL IN]
 
 Team Members
 ------------
-Name   : [FILL IN]
-ID     : [FILL IN]
-Email  : [FILL IN — e.g. f20230716@pilani.bits-pilani.ac.in]
+Name   : [Priyanshu Narayan]
+ID     : [2023A2PS0283P]
+Email  : [f20230283@pilani.bits-pilani.ac.in ]
 
 Name   : [FILL IN]
 ID     : [FILL IN]
-Email  : [FILL IN]
+Email  : [f20230716@pilani.bits-pilani.ac.in]
 
 (add more rows as needed)
 
